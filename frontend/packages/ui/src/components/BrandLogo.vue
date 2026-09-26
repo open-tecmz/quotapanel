@@ -21,7 +21,11 @@
 
     <g transform="translate(0, 0) scale(1)" filter="url(#brand_logo_shadow)">
       <!-- path start -->
-      <g transform="translate(0.000000,1024.000000) scale(0.100000,-0.100000)" style="fill: var(--token-primary-500)" stroke="none">
+      <g
+        transform="translate(0.000000,1024.000000) scale(0.100000,-0.100000)"
+        style="fill: var(--token-primary-500)"
+        stroke="none"
+      >
         <path
           d="M4990 9834 c-30 -3 -163 -11 -295 -20 -251 -15 -370 -26 -495 -45
 -41 -6 -102 -14 -135 -19 -268 -36 -335 -46 -455 -70 -25 -4 -70 -12 -100 -17

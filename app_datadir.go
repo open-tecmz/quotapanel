@@ -21,7 +21,18 @@ func getAppDataDir() string {
 	if configured != "" {
 		return normalizeDataDir(configured)
 	}
+	return defaultDataDir()
+}
+
+// defaultDataDir 返回默认数据根目录（~/.quotapanel/data）。
+func defaultDataDir() string {
+	homeDir, _ := os.UserHomeDir()
 	return filepath.Join(homeDir, ".quotapanel", "data")
+}
+
+// isDefaultDataDir 判断给定目录是否为默认数据根目录。
+func isDefaultDataDir(dir string) bool {
+	return filepath.Clean(dir) == filepath.Clean(defaultDataDir())
 }
 
 // readClientDataRoot 读取客户端配置；首次启动时写入默认 dataRoot。

@@ -49,15 +49,11 @@
 
 <script setup lang="ts">
 import { message } from 'ant-design-vue'
-import { BrainCircuit, Plus, Sparkles } from 'lucide-vue-next'
+import { BrainCircuit, Plus } from 'lucide-vue-next'
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { main } from '../api/call'
 import type { LLMConfig, LLMPXModelInfo, BuiltinModelSetting } from '../api/call'
 import LLMConfigModal from './LLMConfigModal.vue'
-
-const emit = defineEmits<{
-  'open-login': []
-}>()
 
 const llmConfigs = ref<LLMConfig[]>([])
 const showLLMModal = ref(false)
@@ -71,66 +67,7 @@ const builtinApiKey = ref('')
 const builtinLoading = ref(false)
 const builtinError = ref('')
 const isLoggedIn = ref(false)
-const showBuiltinSettingModal = ref(false)
 const builtinModelSettings = ref<BuiltinModelSetting[]>([])
-
-function getBuiltinModelVisible(name: string): boolean {
-  const setting = builtinModelSettings.value.find((s) => s.name === name)
-  return setting ? setting.visible : true
-}
-
-function getBuiltinModelDefault(name: string): boolean {
-  const setting = builtinModelSettings.value.find((s) => s.name === name)
-  return setting ? setting.isDefault : false
-}
-
-function ensureSetting(name: string): BuiltinModelSetting {
-  let setting = builtinModelSettings.value.find((s) => s.name === name)
-  if (!setting) {
-    setting = { name, visible: true, isDefault: false }
-    builtinModelSettings.value.push(setting)
-  }
-  return setting
-}
-
-async function onBuiltinVisibleChange(name: string, checked: boolean) {
-  const setting = ensureSetting(name)
-  setting.visible = checked
-  await saveBuiltinSettings()
-}
-
-async function onBuiltinDefaultChange(name: string) {
-  builtinModelSettings.value.forEach((s) => {
-    s.isDefault = false
-  })
-  const updatedConfigs = llmConfigs.value.map((c) => ({
-    ...c,
-    isDefault: false,
-  }))
-  llmConfigs.value = updatedConfigs
-  try {
-    await main.Call('llm.saveLLMConfigs', { configs: updatedConfigs })
-  } catch {}
-  const setting = ensureSetting(name)
-  setting.isDefault = true
-  await saveBuiltinSettings()
-}
-
-async function saveBuiltinSettings() {
-  try {
-    await main.Call('llm.saveBuiltinModelSettings', {
-      settings: builtinModelSettings.value,
-    })
-  } catch (e: any) {
-    message.error(`保存失败：${e?.message || e}`)
-  }
-}
-
-function formatQuota(q: number): string {
-  if (q >= 1000000) return `${(q / 1000000).toFixed(1)}M`
-  if (q >= 1000) return `${(q / 1000).toFixed(0)}K`
-  return `${q}`
-}
 
 const providerLabel = (p: string) => ({ openai: 'OpenAI', gemini: 'Google Gemini', claude: 'Anthropic Claude' })[p] || p
 
@@ -172,14 +109,6 @@ async function loadLLMConfigs() {
   try {
     llmConfigs.value = (await main.Call('llm.getLLMConfigs')) || []
   } catch {}
-}
-
-function doRecharge() {
-  if (!isLoggedIn.value) {
-    emit('open-login')
-    return
-  }
-  window.dispatchEvent(new CustomEvent('app:open-login', { detail: { page: 'ChargeLLMPX' } }))
 }
 
 async function onLoginSuccess() {

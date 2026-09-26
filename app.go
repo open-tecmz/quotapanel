@@ -809,21 +809,23 @@ func (a *App) callCommon(name string, decode func(interface{}) error) (interface
 
 	case "setting.getAppConfig":
 		return map[string]interface{}{
-			"name":            appConfig.Name,
-			"title":           appConfig.Title,
-			"slogan":          appConfig.Slogan,
-			"version":         appConfig.Version,
-			"website":         appConfig.Website,
-			"websiteGithub":   appConfig.WebsiteGithub,
-			"websiteGitee":    appConfig.WebsiteGitee,
-			"apiBaseUrl":      appConfig.ApiBaseUrl,
-			"userBaseUrl":     appConfig.UserBaseUrl,
-			"deviceUuid":      a.getDeviceUUID(),
-			"analyticsUrl":    appConfig.AnalyticsUrl,
-			"versionCheckUrl": appConfig.VersionCheckUrl,
-			"feedbackUrl":     appConfig.FeedbackUrl,
-			"guideUrl":        appConfig.GuideUrl,
-			"helpUrl":         appConfig.HelpUrl,
+			"name":              appConfig.Name,
+			"title":             appConfig.Title,
+			"slogan":            appConfig.Slogan,
+			"version":           appConfig.Version,
+			"website":           appConfig.Website,
+			"websiteGithub":     appConfig.WebsiteGithub,
+			"websiteGitee":      appConfig.WebsiteGitee,
+			"apiBaseUrl":        appConfig.ApiBaseUrl,
+			"userBaseUrl":       appConfig.UserBaseUrl,
+			"deviceUuid":        a.getDeviceUUID(),
+			"analyticsUrl":      appConfig.AnalyticsUrl,
+			"versionCheckUrl":   appConfig.VersionCheckUrl,
+			"feedbackUrl":       appConfig.FeedbackUrl,
+			"guideUrl":          appConfig.GuideUrl,
+			"helpUrl":           appConfig.HelpUrl,
+			"dataRoot":          a.dataDir,
+			"dataRootIsDefault": isDefaultDataDir(a.dataDir),
 		}, nil, true
 
 	case "setting.checkVersion":
@@ -965,6 +967,9 @@ func (a *App) callCommon(name string, decode func(interface{}) error) (interface
 
 	case "setting.getPlatformArch":
 		return getPlatformArchName(), nil, true
+
+	case "setting.openDataDir":
+		return nil, platform.RevealPath(a.dataDir), true
 
 	}
 	return nil, nil, false

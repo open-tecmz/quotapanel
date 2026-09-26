@@ -38,7 +38,7 @@ import { Check, Crown, Download } from 'lucide-vue-next'
 import { BrowserOpenURL } from '../../wailsjs/runtime/runtime'
 import { main } from '../api/call'
 
-const props = withDefaults(
+withDefaults(
   defineProps<{
     title?: string
     desc?: string

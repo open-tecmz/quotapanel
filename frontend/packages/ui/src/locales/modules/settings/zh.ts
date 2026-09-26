@@ -35,6 +35,11 @@ export default {
       quit: '直接退出',
       hide: '隐藏到后台',
     },
+    dataRoot: {
+      title: '数据目录',
+      desc: '当前数据保存在非默认位置',
+      open: '打开目录',
+    },
     closeConfirm: {
       title: '关闭窗口',
       desc: '请选择关闭窗口后的操作',

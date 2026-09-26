@@ -29,7 +29,7 @@ export default defineConfig({
     },
   },
   server: {
-    port: 53011,
+    port: 53081,
     strictPort: true,
   },
   build: {

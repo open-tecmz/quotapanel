@@ -60,6 +60,25 @@ watch(
 
 const currentProvider = computed(() => props.providers.find((p) => p.id === formState.provider))
 
+// Match a provider against the search keyword (name / id / description).
+function matchesProvider(provider: QuotaProviderInfo, keyword: string): boolean {
+  const query = keyword.trim().toLowerCase()
+  if (!query) return true
+  return [provider.name, provider.id, provider.description].some((field) =>
+    String(field || '')
+      .toLowerCase()
+      .includes(query)
+  )
+}
+
+// Custom filter for the searchable provider select.
+function filterProvider(input: string, option: unknown): boolean {
+  const value = (option as { value?: string } | undefined)?.value
+  const provider = props.providers.find((item) => item.id === value)
+  if (!provider) return true
+  return matchesProvider(provider, input)
+}
+
 function handleCancel() {
   emit('update:open', false)
 }
@@ -110,7 +129,11 @@ async function testSubmit() {
   await handleSubmit()
 }
 
-defineExpose({ testFill, testSubmit })
+function testSearch(keyword: string): string[] {
+  return props.providers.filter((provider) => matchesProvider(provider, keyword)).map((provider) => provider.id)
+}
+
+defineExpose({ testFill, testSubmit, testSearch })
 </script>
 
 <template>
@@ -128,7 +151,9 @@ defineExpose({ testFill, testSubmit })
       <a-form-item :label="t('quota.account.provider')" name="provider">
         <a-select
           v-model:value="formState.provider"
+          show-search
           :disabled="isEdit"
+          :filter-option="filterProvider"
           :placeholder="t('quota.account.chooseProvider')"
         >
           <a-select-option v-for="p in providers" :key="p.id" :value="p.id">

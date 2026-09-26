@@ -61,6 +61,15 @@
             }}</a-button>
           </div>
         </div>
+        <div v-if="!dataRootIsDefault" class="setting-row">
+          <FolderOpen class="w-4 h-4 text-primary-500" aria-hidden="true" />
+          <div class="row-copy">
+            <div class="row-label">{{ t('settings.dataRoot.title') }}</div>
+            <div class="row-desc">{{ t('settings.dataRoot.desc') }}</div>
+            <div class="data-path" :title="dataRoot">{{ dataRoot }}</div>
+          </div>
+          <a-button @click="doOpenDataDir">{{ t('settings.dataRoot.open') }}</a-button>
+        </div>
         <div class="setting-row">
           <RefreshCw class="w-4 h-4 text-primary-500" aria-hidden="true" />
           <div class="row-copy">
@@ -96,7 +105,7 @@
 
 <script setup lang="ts">
 import { message } from 'ant-design-vue'
-import { Languages, MessageSquare, Moon, Power, RefreshCw, Settings, X } from 'lucide-vue-next'
+import { Languages, FolderOpen, MessageSquare, Moon, Power, RefreshCw, Settings, X } from 'lucide-vue-next'
 import { nextTick, onMounted, onUnmounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
@@ -117,6 +126,8 @@ const checkingVersion = ref(false)
 const versionMessage = ref('')
 const updateURL = ref('')
 const feedbackUrl = ref('')
+const dataRoot = ref('')
+const dataRootIsDefault = ref(true)
 const showFeedback = ref(false)
 
 async function loadSettings() {
@@ -124,6 +135,8 @@ async function loadSettings() {
     const cfg = await main.Call('setting.getAppConfig')
     appVersion.value = String(cfg?.version || '')
     feedbackUrl.value = String(cfg?.feedbackUrl || '')
+    dataRoot.value = String(cfg?.dataRoot || '')
+    dataRootIsDefault.value = cfg?.dataRootIsDefault !== false
     autoStart.value = Boolean(await main.Call('setting.getAutoStartEnabled'))
     closeAction.value = String((await main.Call('setting.getCloseAction')) || '')
   } catch (error) {
@@ -152,6 +165,14 @@ async function doCloseAction(action: string) {
   try {
     await main.Call('setting.setCloseAction', { action })
     closeAction.value = action
+  } catch (error) {
+    message.error(String(error))
+  }
+}
+
+async function doOpenDataDir() {
+  try {
+    await main.Call('setting.openDataDir')
   } catch (error) {
     message.error(String(error))
   }
@@ -215,6 +236,10 @@ onMounted(async () => {
     doCloseAction((params as { action: string }).action)
   )
   testActionSet('QuotaSetting.getFeedback', () => ({ url: feedbackUrl.value, open: showFeedback.value }))
+  testActionSet('QuotaSetting.getDataRoot', () => ({
+    path: dataRoot.value,
+    isDefault: dataRootIsDefault.value,
+  }))
   testActionSet('QuotaSetting.openFeedback', () => {
     showFeedback.value = true
     return true
@@ -246,6 +271,7 @@ onUnmounted(() => {
     'QuotaSetting.setTheme',
     'QuotaSetting.setCloseAction',
     'QuotaSetting.getFeedback',
+    'QuotaSetting.getDataRoot',
     'QuotaSetting.openFeedback',
     'QuotaSetting.closeFeedback',
     'setting.prepare',
@@ -306,6 +332,13 @@ onUnmounted(() => {
   color: #6b7280;
   margin-top: 2px;
 }
+.data-path {
+  font-size: 11px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  color: #374151;
+  margin-top: 4px;
+  word-break: break-all;
+}
 .row-action {
   display: flex;
   gap: 6px;
@@ -337,5 +370,8 @@ onUnmounted(() => {
 :global(.dark .row-desc),
 :global(.dark .version-message) {
   color: #9ca3af;
+}
+:global(.dark .data-path) {
+  color: #d1d5db;
 }
 </style>

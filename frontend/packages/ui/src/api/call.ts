@@ -366,6 +366,7 @@ export interface CallMap {
     ret: 'win' | 'osx' | 'linux' | 'none'
   }
   'setting.getPlatformArch': { args: void; ret: 'x86' | 'arm64' | 'none' }
+  'setting.openDataDir': { args: void; ret: void }
 
   // ── quota：AI 订阅额度 ────────────────────────────────────
   'quota.getProviders': { args: void; ret: QuotaProviderInfo[] }

@@ -3,7 +3,7 @@
 # 
 
 # 
-.PHONY: help dev build build-install clean install check-deps format build_and_install update-version
+.PHONY: help dev build stop clean install check-deps format update-version
 
 # Default target
 help:
@@ -11,7 +11,8 @@ help:
 	@echo "  dev                       - Start the development server"
 	@echo "  format                    - Format and lint-fix all frontend code"
 	@echo "  build                     - Build the application"
-	@echo "  build-install             - Build and install to /Applications (macOS)"
+# 
+	@echo "  stop                      - Stop the running QuotaPanel app"
 	@echo "  clean                     - Clean build artifacts"
 	@echo "  install                   - Install dependencies"
 	@echo "  check-deps                - Check if required tools are installed"
@@ -44,13 +45,12 @@ build: check-deps format
 
 # 
 
-# Build and install to /Applications (macOS only)
-build-install: check-deps format
-	wails build -devtools
-	@echo "安装到 /Applications..."
-	sudo rm -rf /Applications/QuotaPanel.app
-	sudo cp -r build/bin/QuotaPanel.app /Applications/QuotaPanel.app
-	@echo "✅ 安装完成：/Applications/QuotaPanel.app"
+# 停止正在运行的 QuotaPanel 应用（含已安装版本与 build/bin 调试实例）
+stop:
+	@pkill -f "QuotaPanel.app/Contents/MacOS/QuotaPanel" 2>/dev/null || true
+	@echo "已停止正在运行的 QuotaPanel（如有）"
+
+# 
 
 # Clean build artifacts
 clean:
@@ -61,12 +61,6 @@ clean:
 	rm -rf frontend/packages/ui/node_modules
 	rm -rf frontend/packages/quota/node_modules
 	go clean
-
-build_and_install:
-	$(MAKE) install
-	$(MAKE) build
-	sudo rm -rfv /Applications/QuotaPanel.app
-	sudo cp -rv build/bin/QuotaPanel.app /Applications/QuotaPanel.app
 
 # 更新版本号（app.go / 前端各 package.json / test/screenshot.ts）
 # 用法：make update-version 0.2.5   或   make update-version VERSION=0.2.5

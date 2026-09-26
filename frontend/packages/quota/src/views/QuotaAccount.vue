@@ -290,6 +290,10 @@ onMounted(() => {
     await modalRef.value?.testSubmit()
     return true
   })
+  testActionSet('QuotaAccount.searchProviders', (params: unknown) => {
+    const { keyword } = (params ?? {}) as { keyword?: string }
+    return modalRef.value?.testSearch(keyword ?? '') ?? []
+  })
   testActionSet('QuotaAccount.addAccount', async (params: unknown) => {
     const p = params as {
       provider: string
@@ -440,6 +444,7 @@ onUnmounted(() => {
     'QuotaAccount.openAddModal',
     'QuotaAccount.fillForm',
     'QuotaAccount.submitForm',
+    'QuotaAccount.searchProviders',
     'QuotaAccount.addAccount',
     'QuotaAccount.updateAccount',
     'QuotaAccount.deleteAccount',

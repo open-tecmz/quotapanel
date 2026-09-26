@@ -35,6 +35,11 @@ export default {
       quit: 'Quit',
       hide: 'Hide to Background',
     },
+    dataRoot: {
+      title: 'Data Directory',
+      desc: 'Data is stored in a custom location',
+      open: 'Open Folder',
+    },
     closeConfirm: {
       title: 'Close Window',
       desc: 'Choose what happens after closing the window',

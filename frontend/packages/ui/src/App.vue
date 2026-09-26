@@ -2,7 +2,7 @@
 import { ConfigProvider, theme } from 'ant-design-vue'
 import enUS from 'ant-design-vue/es/locale/en_US'
 import zhCN from 'ant-design-vue/es/locale/zh_CN'
-import { computed, getCurrentInstance, onMounted, onUnmounted, ref, watchEffect } from 'vue'
+import { computed, getCurrentInstance, onMounted, onUnmounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { EventsEmit, EventsOff, EventsOn, WindowSetAlwaysOnTop } from '../wailsjs/runtime/runtime'
 import AppSidebar from './components/AppSidebar.vue'
@@ -102,14 +102,14 @@ onMounted(async () => {
   window.addEventListener('keydown', onKeydownDebug)
   await appStore.initSettings()
   appStore.loadUserInfo()
-
+  
   trackVisit('Main')
   if (!isAppStoreBuild) {
     autoCheckVersion(5000)
   }
 
   // 监听子组件通过 window 事件请求打开用户远端弹窗
-
+  
 
   // 初始化 window.__test，供各组件注册可测试操作。
   // Vue errorHandler 和 message 拦截仅在测试程序调用 App.startTestMode 后激活。
