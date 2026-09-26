@@ -6,9 +6,9 @@
           <Wallet :size="22" class="text-primary-500" aria-hidden="true" />
         </template>
         <template #extra>
-          <a-button :loading="queryingAll" :disabled="accounts.length === 0" @click="doQueryAll">
+          <a-button :disabled="accounts.length === 0" @click="doQueryAll">
             <div class="inline-flex items-center gap-1">
-              <RefreshCw class="w-4 h-4" aria-hidden="true" />
+              <RefreshCw class="w-4 h-4" :class="{ 'animate-spin': queryingAll }" aria-hidden="true" />
               {{ t('quota.account.refresh') }}
             </div>
           </a-button>
@@ -121,7 +121,7 @@ async function loadProviders() {
 }
 
 async function doQueryAll() {
-  if (accounts.value.length === 0) return
+  if (accounts.value.length === 0 || queryingAll.value) return
   queryingAll.value = true
   try {
     const list = (await main.Call('quota.queryAll')) || []
@@ -347,13 +347,20 @@ onMounted(() => {
     showDetail.value = false
     return true
   })
-  testActionSet('QuotaAccount.getDetailState', () => ({
-    open: showDetail.value,
-    accountId: detailAccount.value?.id ?? 0,
-    windowCount: document.querySelectorAll('.quota-detail .detail-window').length,
-    balanceCount: document.querySelectorAll('.quota-detail .detail-balance-row').length,
-    statCount: document.querySelectorAll('.quota-detail .detail-stat-row').length,
-  }))
+  testActionSet('QuotaAccount.getDetailState', () => {
+    const body = document.querySelector('.quota-detail') as HTMLElement | null
+    const bodyStyle = body ? getComputedStyle(body) : null
+    return {
+      open: showDetail.value,
+      accountId: detailAccount.value?.id ?? 0,
+      windowCount: document.querySelectorAll('.quota-detail .detail-window').length,
+      balanceCount: document.querySelectorAll('.quota-detail .detail-balance-row').length,
+      statCount: document.querySelectorAll('.quota-detail .detail-stat-row').length,
+      bodyMaxHeight: bodyStyle?.maxHeight ?? '',
+      bodyScrollHeight: body?.scrollHeight ?? 0,
+      bodyClientHeight: body?.clientHeight ?? 0,
+    }
+  })
   testActionSet('QuotaAccount.cardDimensions', () => {
     return Array.from(document.querySelectorAll('.quota-card')).map((card) => {
       const element = card as HTMLElement

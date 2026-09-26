@@ -41,6 +41,14 @@ func normalizeStatus(status string, percent float64) string {
 
 func now() time.Time { return time.Now() }
 
+// truncateText 截断过长文本，用于日志与错误提示中展示原始响应片段。
+func truncateText(s string, n int) string {
+	if len(s) <= n {
+		return s
+	}
+	return s[:n] + "…"
+}
+
 // BrowserRunner 允许 provider 借助浏览器界面完成额度查询。
 // 对于「只能通过界面获取」的订阅（例如必须网页登录后查看的账号），
 // provider 声明 Mode = ModeBrowser，并在 Query 中通过该接口打开页面、执行脚本。

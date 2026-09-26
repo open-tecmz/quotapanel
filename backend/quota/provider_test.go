@@ -116,6 +116,84 @@ func TestCommandcodeOrganizationScope(t *testing.T) {
 	}
 }
 
+func TestDeepseekBalanceMapping(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Header.Get("Authorization") != "Bearer sk-test" {
+			t.Errorf("认证头不正确: %s", r.Header.Get("Authorization"))
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"is_available":true,"balance_infos":[{"currency":"CNY","total_balance":"474.63","granted_balance":"0.00","topped_up_balance":"474.63"}]}`))
+	}))
+	defer server.Close()
+
+	snap, err := queryDeepseek(&QueryContext{Account: &Account{Key: "sk-test"}}, server.URL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if snap.Provider != "deepseek" || snap.Status != "ok" || len(snap.Balances) != 1 || snap.Balances[0].Value != "¥474.63" {
+		t.Fatalf("DeepSeek 余额映射不正确: %+v", snap)
+	}
+	if len(snap.Stats) != 2 || snap.Stats[1].Value != "¥474.63" {
+		t.Fatalf("DeepSeek 明细不正确: %+v", snap.Stats)
+	}
+}
+
+// TestMimoPlanUsageMapping 的样例取自 2026-09-26 真实控制台页面
+// （https://platform.xiaomimimo.com/console/plan-manage）渲染后的 DOM 抽取结果。
+func TestMimoPlanUsageMapping(t *testing.T) {
+	payload := `{"status":200,"body":{"planName":"Lite 月度套餐","expiresAt":"2026-10-23 23:59:59 (UTC)","used":"508,596,984","limit":"4,100,000,000","percent":12,"tokenTotal":"45,295,963 Tokens","requestCount":"213 次"}}`
+	snap, err := mimoProvider{}.Query(&QueryContext{Account: &Account{ID: 1}, Browser: fakeBrowserRunner{result: payload}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if snap.Plan != "Lite 月度套餐" || snap.Status != "ok" {
+		t.Fatalf("MiMo 概览不正确: %+v", snap)
+	}
+	if len(snap.Windows) != 1 {
+		t.Fatalf("MiMo 应有且仅有一个套餐用量窗口: %+v", snap.Windows)
+	}
+	w := snap.Windows[0]
+	if w.Label != "套餐用量" || w.Detail != "508,596,984 / 4,100,000,000" || w.Percent != 12 || w.ResetAt != "2026-10-23 23:59:59 (UTC)" {
+		t.Fatalf("MiMo 套餐用量不正确: %+v", w)
+	}
+	if len(snap.Stats) != 2 || snap.Stats[0].Value != "45,295,963 Tokens" || snap.Stats[1].Value != "213 次" {
+		t.Fatalf("MiMo 用量统计不正确: %+v", snap.Stats)
+	}
+}
+
+func TestMimoEmptyPageReportsError(t *testing.T) {
+	_, err := mimoProvider{}.Query(&QueryContext{Account: &Account{ID: 1}, Browser: fakeBrowserRunner{result: `{"status":200,"body":null}`}})
+	if err == nil {
+		t.Fatal("未登录或页面无数据时应返回错误提示")
+	}
+}
+
+func TestBuildScrapeRuleScript(t *testing.T) {
+	script, err := buildScrapeRuleScript("mimo")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(script, "__RULES__") {
+		t.Fatal("规则占位符未被替换")
+	}
+	for _, want := range []string{"planName", "aria-valuenow", "console/plan-manage"} {
+		if !strings.Contains(script, want) {
+			t.Fatalf("生成的抓取脚本缺少 %q", want)
+		}
+	}
+	if _, err := buildScrapeRuleScript("not-exist"); err == nil {
+		t.Fatal("缺少规则时应报错")
+	}
+}
+
+type fakeBrowserRunner struct{ result string }
+
+func (f fakeBrowserRunner) Open(uint, string) error                  { return nil }
+func (f fakeBrowserRunner) Complete(uint)                            {}
+func (f fakeBrowserRunner) Remove(uint) error                        { return nil }
+func (f fakeBrowserRunner) Close()                                   {}
+func (f fakeBrowserRunner) Run(uint, string, string) (string, error) { return f.result, nil }
+
 func TestMaskKey(t *testing.T) {
 	if got := maskKey("user_1234567890abcdef"); got != "user_123...cdef" {
 		t.Errorf("maskKey 结果异常: %s", got)
@@ -126,7 +204,7 @@ func TestMaskKey(t *testing.T) {
 }
 
 func TestSupportedProviders(t *testing.T) {
-	want := []string{"claude-web", "codex-web", "commandcode", "copilot", "cursor-web", "deepseek", "devin", "grok", "kimi", "kimi-code", "minimax", "openai-api", "openrouter", "opencode", "zai"}
+	want := []string{"claude-web", "codex-web", "commandcode", "copilot", "cursor-web", "deepseek", "devin", "grok", "kimi", "kimi-code", "mimo", "minimax", "openai-api", "openrouter", "opencode", "zai"}
 	for _, id := range want {
 		if _, ok := GetProvider(id); !ok {
 			t.Fatalf("缺少供应商适配器: %s", id)

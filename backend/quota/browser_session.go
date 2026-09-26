@@ -15,6 +15,8 @@ import (
 	"sync"
 	"time"
 
+	"quotapanel/backend/base/logging"
+
 	"github.com/gorilla/websocket"
 )
 
@@ -51,6 +53,66 @@ func (a *browserAccount) track(cmd *exec.Cmd, headless bool) {
 
 func NewBrowserSessionManager(root string) *BrowserSessionManager {
 	return &BrowserSessionManager{root: root, accounts: make(map[uint]*browserAccount)}
+}
+
+// 登录 Cookie 的落盘文件（放在账号的 profile 目录内，随账号删除一起清理）。
+const profileCookieFile = ".quotapanel-cookies.json"
+
+// killProfileBrowsers 结束仍占用该 profile 的浏览器进程。
+// 部分站点登录窗口关闭后进程可能残留，导致后续无头会话因 profile 被锁而启动失败。
+func killProfileBrowsers(profile string) {
+	if runtime.GOOS == "windows" {
+		_ = exec.Command("taskkill", "/F", "/FI", "COMMANDLINE eq *"+profile+"*").Run()
+		return
+	}
+	_ = exec.Command("pkill", "-f", profile).Run()
+	time.Sleep(300 * time.Millisecond)
+}
+
+// cleanProfileLocks 清理浏览器异常退出后残留的锁文件与调试端口文件。
+func cleanProfileLocks(profile string) {
+	for _, name := range []string{"DevToolsActivePort", "SingletonLock", "SingletonCookie", "SingletonSocket"} {
+		_ = os.Remove(filepath.Join(profile, name))
+	}
+}
+
+func loadProfileCookies(profile string) []map[string]any {
+	data, err := os.ReadFile(filepath.Join(profile, profileCookieFile))
+	if err != nil {
+		return nil
+	}
+	var cookies []map[string]any
+	if json.Unmarshal(data, &cookies) != nil || len(cookies) == 0 {
+		return nil
+	}
+	return cookies
+}
+
+// saveProfileCookies 保存当前会话 Cookie。
+// 小米等站点的登录 Cookie 是会话级的，浏览器进程退出即失效；这里统一续期为 7 天后再落盘。
+func saveProfileCookies(profile string, conn *websocket.Conn) {
+	raw, err := cdpCall(conn, 950, "Network.getAllCookies", map[string]any{})
+	if err != nil {
+		return
+	}
+	var res struct {
+		Result struct {
+			Cookies []map[string]any `json:"cookies"`
+		} `json:"result"`
+	}
+	if json.Unmarshal(raw["result"], &res) != nil || len(res.Result.Cookies) == 0 {
+		return
+	}
+	expiry := float64(time.Now().Add(7 * 24 * time.Hour).Unix())
+	for _, cookie := range res.Result.Cookies {
+		if v, ok := cookie["expires"].(float64); !ok || v <= 0 {
+			cookie["expires"] = expiry
+			delete(cookie, "session")
+		}
+	}
+	if data, err := json.Marshal(res.Result.Cookies); err == nil {
+		_ = os.WriteFile(filepath.Join(profile, profileCookieFile), data, 0o600)
+	}
 }
 
 func (m *BrowserSessionManager) account(id uint) *browserAccount {
@@ -100,20 +162,78 @@ func (m *BrowserSessionManager) Open(id uint, pageURL string) error {
 		m.stopBrowser(acc, profile)
 		_ = os.Remove(filepath.Join(profile, "DevToolsActivePort"))
 	}
+	// 清理可能残留的浏览器进程与锁文件，确保登录窗口能正常打开
+	killProfileBrowsers(profile)
+	cleanProfileLocks(profile)
 	cmd := exec.Command(path, "--app="+pageURL, "--user-data-dir="+profile, "--remote-debugging-address=127.0.0.1", "--remote-debugging-port=0", "--no-first-run", "--no-default-browser-check")
 	if err := cmd.Start(); err != nil {
 		return fmt.Errorf("打开登录窗口失败: %w", err)
 	}
 	acc.track(cmd, false)
 	acc.loginPending = true
+	go m.watchLogin(id, pageURL)
 	return nil
 }
 
 func (m *BrowserSessionManager) Complete(id uint) {
 	acc := m.account(id)
 	acc.mu.Lock()
+	// 登录完成时立刻保存 Cookie：部分站点的登录 Cookie 是会话级的，窗口关闭后会丢失
+	profile := m.profile(id)
+	if target, err := m.target(profile); err == nil {
+		if conn, _, derr := websocket.DefaultDialer.Dial(target.WebSocketURL, nil); derr == nil {
+			_ = conn.SetReadDeadline(time.Now().Add(6 * time.Second))
+			saveProfileCookies(profile, conn)
+			_ = conn.Close()
+		}
+	}
 	acc.loginPending = false
 	acc.mu.Unlock()
+}
+
+// watchLogin 在登录窗口打开后自动检测登录完成：一旦页面进入目标地址，
+// 立即保存会话 Cookie 并结束"待登录"状态，避免用户必须手动点「验证登录」。
+func (m *BrowserSessionManager) watchLogin(id uint, pageURL string) {
+	profile := m.profile(id)
+	for i := 0; i < 150; i++ { // 最多观察约 5 分钟
+		time.Sleep(2 * time.Second)
+		acc := m.account(id)
+		acc.mu.Lock()
+		pending := acc.loginPending
+		acc.mu.Unlock()
+		if !pending {
+			return
+		}
+		target, err := m.target(profile)
+		if err != nil {
+			continue
+		}
+		conn, _, err := websocket.DefaultDialer.Dial(target.WebSocketURL, nil)
+		if err != nil {
+			continue
+		}
+		_ = conn.SetReadDeadline(time.Now().Add(5 * time.Second))
+		raw, err := cdpCall(conn, 1, "Runtime.evaluate", map[string]any{"expression": "location.href", "returnByValue": true})
+		if err == nil {
+			var res struct {
+				Result struct {
+					Value string `json:"value"`
+				} `json:"result"`
+			}
+			_ = json.Unmarshal(raw["result"], &res)
+			if strings.HasPrefix(res.Result.Value, pageURL) {
+				_ = conn.SetReadDeadline(time.Now().Add(6 * time.Second))
+				saveProfileCookies(profile, conn)
+				acc.mu.Lock()
+				acc.loginPending = false
+				acc.mu.Unlock()
+				logging.Info("quota browser: account=%d 已检测到登录并保存会话", id)
+				_ = conn.Close()
+				return
+			}
+		}
+		_ = conn.Close()
+	}
 }
 
 func (m *BrowserSessionManager) Remove(id uint) error {
@@ -228,7 +348,9 @@ func (m *BrowserSessionManager) ensureTarget(acc *browserAccount, profile, pageU
 	if err := os.MkdirAll(profile, 0700); err != nil {
 		return nil, err
 	}
-	_ = os.Remove(filepath.Join(profile, "DevToolsActivePort"))
+	// 结束占用 profile 的残留进程并清理锁，否则无头会话会因 profile 被锁而启动失败
+	killProfileBrowsers(profile)
+	cleanProfileLocks(profile)
 	cmd := exec.Command(path, "--headless=new", "--disable-gpu", "--user-data-dir="+profile, "--remote-debugging-address=127.0.0.1", "--remote-debugging-port=0", "--no-first-run", pageURL)
 	if err := cmd.Start(); err != nil {
 		return nil, err
@@ -272,6 +394,33 @@ func (m *BrowserSessionManager) Run(id uint, pageURL, script string) (string, er
 		return "", errors.New("请先在登录窗口完成登录，然后点击“验证登录”")
 	}
 	profile := m.profile(id)
+
+	var lastErr error
+	for attempt := 0; attempt < 3; attempt++ {
+		value, err := m.runOnce(acc, profile, pageURL, script, id)
+		if err == nil {
+			return value, nil
+		}
+		lastErr = err
+		if !isTransientCDPError(err) {
+			return "", err
+		}
+		// 页面在跳转（SSO / SPA 路由）导致本次求值作废，稍后重新解析目标再试
+		time.Sleep(600 * time.Millisecond)
+	}
+	return "", lastErr
+}
+
+// isTransientCDPError 判断是否是「页面正在跳转」这类可重试的 CDP 错误。
+func isTransientCDPError(err error) bool {
+	if err == nil {
+		return false
+	}
+	msg := err.Error()
+	return strings.Contains(msg, "navigated or closed") || strings.Contains(msg, "-32000")
+}
+
+func (m *BrowserSessionManager) runOnce(acc *browserAccount, profile, pageURL, script string, id uint) (string, error) {
 	target, err := m.ensureTarget(acc, profile, pageURL)
 	if err != nil {
 		return "", err
@@ -281,10 +430,18 @@ func (m *BrowserSessionManager) Run(id uint, pageURL, script string) (string, er
 		return "", err
 	}
 	defer conn.Close()
-	_ = conn.SetReadDeadline(time.Now().Add(25 * time.Second))
-	_ = conn.SetWriteDeadline(time.Now().Add(25 * time.Second))
+	_ = conn.SetReadDeadline(time.Now().Add(30 * time.Second))
+	_ = conn.SetWriteDeadline(time.Now().Add(30 * time.Second))
+
+	// 注入已保存的登录 Cookie：会话级 Cookie 在浏览器进程退出后会丢失，
+	// 这里在各站点导航前统一补齐，保证无头查询仍处于登录态。
+	_, _ = cdpCall(conn, 900, "Network.enable", map[string]any{})
+	if cookies := loadProfileCookies(profile); len(cookies) > 0 {
+		_, _ = cdpCall(conn, 901, "Network.setCookies", map[string]any{"cookies": cookies})
+	}
+
 	if !strings.HasPrefix(target.URL, pageURL) {
-		if _, err := cdpCall(conn, 1, "Page.navigate", map[string]any{"url": pageURL}); err != nil {
+		if _, err := cdpCall(conn, 1, "Page.navigate", map[string]any{"url": pageURL}); err != nil && !isTransientCDPError(err) {
 			return "", err
 		}
 	}
@@ -292,9 +449,14 @@ func (m *BrowserSessionManager) Run(id uint, pageURL, script string) (string, er
 	if err != nil {
 		return "", err
 	}
+	expected := wanted.Scheme + "://" + wanted.Host + wanted.Path
+
+	// 等待页面稳定：连续两次地址与 readyState 都符合，避免在跳转过程中求值
 	ready := false
-	for i := 0; i < 30; i++ {
-		raw, err := cdpCall(conn, 10+i, "Runtime.evaluate", map[string]any{"expression": "location.origin + '|' + document.readyState", "returnByValue": true})
+	lastState := ""
+	stable := 0
+	for i := 0; i < 60; i++ {
+		raw, err := cdpCall(conn, 10+i, "Runtime.evaluate", map[string]any{"expression": "location.href + '|' + document.readyState", "returnByValue": true})
 		if err == nil {
 			var state struct {
 				Result struct {
@@ -302,16 +464,27 @@ func (m *BrowserSessionManager) Run(id uint, pageURL, script string) (string, er
 				} `json:"result"`
 			}
 			_ = json.Unmarshal(raw["result"], &state)
-			if strings.HasPrefix(state.Result.Value, wanted.Scheme+"://"+wanted.Host+"|") && strings.HasSuffix(state.Result.Value, "|complete") {
-				ready = true
-				break
+			lastState = state.Result.Value
+			if strings.HasPrefix(state.Result.Value, expected) && strings.HasSuffix(state.Result.Value, "|complete") {
+				stable++
+				if stable >= 2 {
+					ready = true
+					break
+				}
+			} else {
+				stable = 0
 			}
+		} else {
+			stable = 0
 		}
-		time.Sleep(200 * time.Millisecond)
+		time.Sleep(300 * time.Millisecond)
 	}
 	if !ready {
-		return "", errors.New("尚未进入供应商页面，请在登录窗口完成登录")
+		logging.Warn("quota browser: account=%d 未进入目标页面（当前 %s）", id, lastState)
+		return "", fmt.Errorf("尚未进入供应商页面（当前地址：%s），请在登录窗口完成登录后重试", lastState)
 	}
+	// 已确认处于目标页面，先保存会话 Cookie，保证窗口关闭后无头查询仍可用
+	saveProfileCookies(profile, conn)
 	raw, err := cdpCall(conn, 100, "Runtime.evaluate", map[string]any{"expression": script, "awaitPromise": true, "returnByValue": true})
 	if err != nil {
 		return "", err
@@ -335,5 +508,6 @@ func (m *BrowserSessionManager) Run(id uint, pageURL, script string) (string, er
 	if value == "" {
 		return "", errors.New("额度页面未返回数据，请确认已登录")
 	}
+	saveProfileCookies(profile, conn)
 	return value, nil
 }

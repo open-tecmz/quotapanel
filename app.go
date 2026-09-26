@@ -45,6 +45,7 @@ type App struct {
 	autoStartMgr *service.AutoStartManager
 	systemLogger *logging.RollingStore
 	dataDir      string
+	logDir       string
 	quotaSvc     *quota.Service
 	// quitting is set when the app exits programmatically (tray menu, restart,
 	// resolved dialog) so onBeforeClose does not block the shutdown.
@@ -89,6 +90,7 @@ func (a *App) startup(ctx context.Context) {
 	} else {
 		globalLogDir = filepath.Join(a.dataDir, "logs")
 	}
+	a.logDir = globalLogDir
 	if initErr := logging.Init(globalLogDir); initErr != nil {
 		fmt.Printf("警告：初始化日志文件失败: %v\n", initErr)
 	} else {
@@ -300,9 +302,12 @@ func (a *App) getSystemVersion() map[string]string {
 
 func (a *App) getSystemLogs() (string, error) {
 	var logs strings.Builder
-	systemLogDir := filepath.Join(a.dataDir, "system_logs")
-	logs.WriteString("=== Application System Logs ===\n")
-	if entries, err := os.ReadDir(systemLogDir); err == nil {
+	logDir := a.logDir
+	if logDir == "" {
+		logDir = filepath.Join(a.dataDir, "logs")
+	}
+	logs.WriteString("=== Application Logs ===\n")
+	if entries, err := os.ReadDir(logDir); err == nil {
 		now := time.Now()
 		yesterday := now.Add(-24 * time.Hour)
 		totalSize := 0
@@ -316,7 +321,7 @@ func (a *App) getSystemLogs() (string, error) {
 				continue
 			}
 			if info.ModTime().After(yesterday) {
-				filePath := filepath.Join(systemLogDir, entry.Name())
+				filePath := filepath.Join(logDir, entry.Name())
 				content, err := os.ReadFile(filePath)
 				if err == nil {
 					if totalSize+len(content) > maxSize {
@@ -331,10 +336,10 @@ func (a *App) getSystemLogs() (string, error) {
 			}
 		}
 		if totalSize == 0 {
-			logs.WriteString("No system logs found in the last 24 hours\n")
+			logs.WriteString("No application logs found in the last 24 hours\n")
 		}
 	} else {
-		logs.WriteString(fmt.Sprintf("Unable to read system logs directory: %v\n", err))
+		logs.WriteString(fmt.Sprintf("Unable to read log directory (%s): %v\n", logDir, err))
 	}
 	return logs.String(), nil
 }
@@ -616,7 +621,7 @@ var appConfig = struct {
 	Name:            "quotapanel",
 	Title:           "QuotaPanel",
 	Slogan:          DefaultSlogan,
-	Version:         "v0.1.0",
+	Version:         "v0.2.0-beta",
 	Website:         siteBaseURL + "/quotapanel",
 	WebsiteGithub:   "https://github.com/open-tecmz/quotapanel",
 	WebsiteGitee:    "https://gitee.com/open-tecmz/quotapanel",

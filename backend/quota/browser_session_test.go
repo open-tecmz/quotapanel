@@ -4,9 +4,42 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 )
+
+func TestProfileCookiePersistence(t *testing.T) {
+	profile := filepath.Join(t.TempDir(), "p1")
+	if err := os.MkdirAll(profile, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if loadProfileCookies(profile) != nil {
+		t.Fatal("无 Cookie 文件时应返回 nil")
+	}
+	if err := os.WriteFile(filepath.Join(profile, profileCookieFile), []byte(`[{"name":"serviceToken","value":"x"}]`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if got := loadProfileCookies(profile); len(got) != 1 || got[0]["name"] != "serviceToken" {
+		t.Fatalf("Cookie 读取不正确: %+v", got)
+	}
+
+	for _, name := range []string{"DevToolsActivePort", "SingletonLock", "SingletonCookie", "SingletonSocket"} {
+		if err := os.WriteFile(filepath.Join(profile, name), []byte("x"), 0o600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	cleanProfileLocks(profile)
+	for _, name := range []string{"DevToolsActivePort", "SingletonLock", "SingletonCookie", "SingletonSocket"} {
+		if _, err := os.Stat(filepath.Join(profile, name)); !os.IsNotExist(err) {
+			t.Fatalf("锁文件未清理: %s", name)
+		}
+	}
+	if len(loadProfileCookies(profile)) != 1 {
+		t.Fatal("清理锁文件不应删除 Cookie 文件")
+	}
+}
 
 func TestBrowserSessionPersistsCookie(t *testing.T) {
 	if _, err := browserExecutable(); err != nil {

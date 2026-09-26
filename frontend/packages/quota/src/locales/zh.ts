@@ -18,6 +18,7 @@ export const zh = {
       accountUpdatedAt: '账号更新于 {time}',
       notQueried: '未查询',
       copy: '复制 Key',
+      more: '更多',
       login: '打开登录窗口',
       verify: '验证登录并刷新',
       screenshot: '保存卡片截图',

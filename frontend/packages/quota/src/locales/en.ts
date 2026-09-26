@@ -18,6 +18,7 @@ export const en = {
       accountUpdatedAt: 'Account updated {time}',
       notQueried: 'Not checked',
       copy: 'Copy key',
+      more: 'More',
       login: 'Open login window',
       verify: 'Verify login and refresh',
       screenshot: 'Save card screenshot',

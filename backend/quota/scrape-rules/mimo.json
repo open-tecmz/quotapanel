@@ -1,0 +1,47 @@
+{
+  "id": "mimo",
+  "name": "Xiaomi MiMo Token Plan",
+  "url": "https://platform.xiaomimimo.com/console/plan-manage",
+  "waitFor": "[role=\"progressbar\"][aria-valuenow]",
+  "timeoutMs": 12000,
+  "fields": {
+    "planName": {
+      "selector": "p",
+      "pick": "text",
+      "match": "^\\S+\\s*(月度|年度)套餐$"
+    },
+    "expiresAt": {
+      "selector": "p",
+      "pick": "text",
+      "match": "^有效期至\\s*(.+)$",
+      "group": 1
+    },
+    "used": {
+      "selector": "[title]",
+      "pick": "title",
+      "match": "^([\\d,]+)\\s*\\/\\s*[\\d,]+$",
+      "group": 1
+    },
+    "limit": {
+      "selector": "[title]",
+      "pick": "title",
+      "match": "^[\\d,]+\\s*\\/\\s*([\\d,]+)$",
+      "group": 1
+    },
+    "percent": {
+      "selector": "[role=\"progressbar\"]",
+      "pick": "aria-valuenow",
+      "number": true
+    },
+    "tokenTotal": {
+      "selector": "p",
+      "pick": "text",
+      "match": "^[\\d,]+ Tokens$"
+    },
+    "requestCount": {
+      "selector": "p",
+      "pick": "text",
+      "match": "^[\\d,]+ 次$"
+    }
+  }
+}

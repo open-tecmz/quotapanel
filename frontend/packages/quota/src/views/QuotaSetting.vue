@@ -14,10 +14,10 @@
             <div class="row-desc">{{ t('settings.languageDesc') }}</div>
           </div>
           <div class="row-action">
-            <a-button :type="appStore.locale === 'zh' ? 'primary' : 'default'" @click="doLocale('zh')">中文</a-button>
-            <a-button :type="appStore.locale === 'en' ? 'primary' : 'default'" @click="doLocale('en')"
-              >English</a-button
-            >
+            <a-radio-group :value="appStore.locale" button-style="solid" @change="onLocaleChange">
+              <a-radio-button value="zh">中文</a-radio-button>
+              <a-radio-button value="en">English</a-radio-button>
+            </a-radio-group>
           </div>
         </div>
         <div class="setting-row">
@@ -27,12 +27,10 @@
             <div class="row-desc">{{ t('settings.theme.desc') }}</div>
           </div>
           <div class="row-action">
-            <a-button :type="!appStore.isDark ? 'primary' : 'default'" @click="doTheme(false)">{{
-              t('settings.theme.light')
-            }}</a-button>
-            <a-button :type="appStore.isDark ? 'primary' : 'default'" @click="doTheme(true)">{{
-              t('settings.theme.dark')
-            }}</a-button>
+            <a-radio-group :value="appStore.isDark ? 'dark' : 'light'" button-style="solid" @change="onThemeChange">
+              <a-radio-button value="light">{{ t('settings.theme.light') }}</a-radio-button>
+              <a-radio-button value="dark">{{ t('settings.theme.dark') }}</a-radio-button>
+            </a-radio-group>
           </div>
         </div>
         <div class="setting-row">
@@ -50,15 +48,11 @@
             <div class="row-desc">{{ t('settings.closeBehavior.desc') }}</div>
           </div>
           <div class="row-action">
-            <a-button :type="closeAction === '' ? 'primary' : 'default'" @click="doCloseAction('')">{{
-              t('settings.closeBehavior.ask')
-            }}</a-button>
-            <a-button :type="closeAction === 'quit' ? 'primary' : 'default'" @click="doCloseAction('quit')">{{
-              t('settings.closeBehavior.quit')
-            }}</a-button>
-            <a-button :type="closeAction === 'hide' ? 'primary' : 'default'" @click="doCloseAction('hide')">{{
-              t('settings.closeBehavior.hide')
-            }}</a-button>
+            <a-radio-group :value="closeAction" button-style="solid" @change="onCloseActionChange">
+              <a-radio-button value="">{{ t('settings.closeBehavior.ask') }}</a-radio-button>
+              <a-radio-button value="quit">{{ t('settings.closeBehavior.quit') }}</a-radio-button>
+              <a-radio-button value="hide">{{ t('settings.closeBehavior.hide') }}</a-radio-button>
+            </a-radio-group>
           </div>
         </div>
         <div v-if="!dataRootIsDefault" class="setting-row">
@@ -105,6 +99,7 @@
 
 <script setup lang="ts">
 import { message } from 'ant-design-vue'
+import type { RadioChangeEvent } from 'ant-design-vue'
 import { Languages, FolderOpen, MessageSquare, Moon, Power, RefreshCw, Settings, X } from 'lucide-vue-next'
 import { nextTick, onMounted, onUnmounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -150,6 +145,18 @@ async function doLocale(locale: 'zh' | 'en') {
 
 async function doTheme(dark: boolean) {
   await appStore.setTheme(dark)
+}
+
+function onLocaleChange(event: RadioChangeEvent) {
+  doLocale(event.target.value as 'zh' | 'en')
+}
+
+function onThemeChange(event: RadioChangeEvent) {
+  doTheme(event.target.value === 'dark')
+}
+
+function onCloseActionChange(event: RadioChangeEvent) {
+  doCloseAction(String(event.target.value))
 }
 
 async function doAutoStart(value: boolean) {
@@ -342,6 +349,7 @@ onUnmounted(() => {
 .row-action {
   display: flex;
   gap: 6px;
+  flex-shrink: 0;
 }
 .about-card {
   padding: 16px;

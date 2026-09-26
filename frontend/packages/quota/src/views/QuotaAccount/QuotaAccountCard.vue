@@ -36,32 +36,34 @@
 
     <!-- 额度详情（默认仅展示 3 条进度条，其余在详情弹窗中查看） -->
     <div class="card-details px-3 pb-2">
-      <div v-if="snapshot && snapshot.error" class="text-[11px] text-red-500 bg-red-50 rounded-lg px-2.5 py-1.5">
+      <div
+        v-if="snapshot && snapshot.error"
+        class="text-[11px] text-red-500 bg-red-50 rounded-lg px-2.5 py-1.5 break-all"
+      >
         {{ snapshot.error }}
       </div>
       <template v-else-if="snapshot">
         <div v-if="snapshot.plan" class="text-[11px] text-gray-500 mb-1 truncate">{{ snapshot.plan }}</div>
-        <div v-if="visibleWindows.length" class="space-y-1">
-          <div
-            v-for="w in visibleWindows"
-            :key="w.key"
-            class="flex items-center gap-2"
-            :title="w.resetAt ? `${w.label} · ${t('quota.account.resetAt')}: ${w.resetAt}` : w.label"
-          >
-            <span class="w-14 shrink-0 text-[11px] text-gray-500 truncate">{{ w.label }}</span>
-            <div class="flex-1 min-w-0">
-              <a-progress
-                :percent="Math.min(100, Math.round(w.percent))"
-                :stroke-color="progressColor(w.status)"
-                :show-info="false"
-                size="small"
-              />
-            </div>
-            <span class="w-11 shrink-0 text-right text-[11px] text-gray-500">{{
-              w.detail || `${w.percent.toFixed(0)}%`
-            }}</span>
-          </div>
-          <div v-if="hiddenWindowCount" class="text-[10px] text-primary-600">
+        <div v-if="visibleWindows.length" class="window-grid">
+          <template v-for="w in visibleWindows" :key="w.key">
+            <span
+              class="window-label"
+              :title="w.resetAt ? `${w.label} · ${t('quota.account.resetAt')}: ${w.resetAt}` : w.label"
+            >
+              {{ w.label }}
+            </span>
+            <a-progress
+              class="window-bar"
+              :percent="Math.min(100, Math.round(w.percent))"
+              :stroke-color="progressColor(w.status)"
+              :show-info="false"
+              size="small"
+            />
+            <span class="window-value" :title="w.detail || `${w.percent.toFixed(0)}%`">
+              {{ w.detail || `${w.percent.toFixed(0)}%` }}
+            </span>
+          </template>
+          <div v-if="hiddenWindowCount" class="window-more">
             {{ t('quota.account.moreWindows', { count: hiddenWindowCount }) }}
           </div>
         </div>
@@ -88,34 +90,56 @@
       </div>
     </div>
 
-    <!-- 最后一行：#ID + 更新时间 + 操作 -->
+    <!-- 最后一行：更新时间 + 操作（操作默认隐藏，hover 时显示） -->
     <div class="px-3 pb-2 pt-1 shrink-0 text-xs border-t border-gray-50">
       <div class="flex items-center justify-between gap-2">
-        <span class="text-[10px] text-gray-400 min-w-0 truncate" :title="updateTimeText">
-          #{{ account.id }} · {{ updateTimeText }}
+        <span
+          class="flex items-center gap-1 min-w-0 text-[10px] text-gray-400"
+          :title="`#${account.id} · ${updateTimeText}`"
+        >
+          <Clock class="w-3 h-3 shrink-0" aria-hidden="true" />
+          <span class="truncate">{{ updateTimeValue }}</span>
         </span>
-        <div class="flex items-center justify-end shrink-0 gap-0.5">
+        <div
+          class="card-actions flex items-center justify-end shrink-0 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity duration-150"
+          @click.stop
+        >
           <a-button v-if="browserMode" type="text" :title="t('quota.account.login')" @click.stop="emit('login')">
-            <LogIn class="w-4 h-4 text-gray-500" aria-hidden="true" />
+            <Globe class="w-4 h-4 text-gray-500" aria-hidden="true" />
           </a-button>
           <a-button v-if="browserMode" type="text" :title="t('quota.account.verify')" @click.stop="emit('verify')">
             <CircleCheck class="w-4 h-4 text-primary-600" aria-hidden="true" />
           </a-button>
-          <a-button type="text" :title="t('quota.account.screenshot')" @click.stop="emit('screenshot')">
-            <Camera class="w-4 h-4 text-gray-500" aria-hidden="true" />
+          <a-button type="text" :title="t('quota.account.refresh')" @click.stop="emit('refresh')">
+            <RefreshCw class="w-4 h-4 text-gray-500" :class="{ 'animate-spin': loading }" aria-hidden="true" />
           </a-button>
-          <a-button type="text" :title="t('quota.account.refresh')" :loading="loading" @click.stop="emit('refresh')">
-            <RefreshCw class="w-4 h-4 text-gray-500" aria-hidden="true" />
-          </a-button>
-          <a-button type="text" :title="t('quota.account.detail')" @click.stop="emit('detail')">
-            <Eye class="w-4 h-4 text-gray-500" aria-hidden="true" />
-          </a-button>
-          <a-button type="text" :title="t('quota.account.edit')" @click.stop="emit('edit')">
-            <Pencil class="w-4 h-4 text-gray-500" aria-hidden="true" />
-          </a-button>
-          <a-button type="text" :title="t('quota.account.delete')" @click.stop="emit('delete')">
-            <Trash2 class="w-4 h-4 text-red-400" aria-hidden="true" />
-          </a-button>
+          <a-dropdown :trigger="['click']" placement="bottomRight">
+            <a-button type="text" :title="t('quota.account.more')">
+              <MoreVertical class="w-4 h-4 text-gray-500" aria-hidden="true" />
+            </a-button>
+            <template #overlay>
+              <a-menu @click="onActionSelect">
+                <a-menu-item key="screenshot">
+                  <span class="inline-flex items-center gap-2">
+                    <Camera class="w-4 h-4" aria-hidden="true" />
+                    {{ t('quota.account.screenshot') }}
+                  </span>
+                </a-menu-item>
+                <a-menu-item key="edit">
+                  <span class="inline-flex items-center gap-2">
+                    <Pencil class="w-4 h-4" aria-hidden="true" />
+                    {{ t('quota.account.edit') }}
+                  </span>
+                </a-menu-item>
+                <a-menu-item key="delete" danger>
+                  <span class="inline-flex items-center gap-2">
+                    <Trash2 class="w-4 h-4" aria-hidden="true" />
+                    {{ t('quota.account.delete') }}
+                  </span>
+                </a-menu-item>
+              </a-menu>
+            </template>
+          </a-dropdown>
         </div>
       </div>
     </div>
@@ -125,7 +149,18 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { Camera, CircleCheck, Copy, Eye, LogIn, Pencil, RefreshCw, Trash2, Wallet } from 'lucide-vue-next'
+import {
+  Camera,
+  CircleCheck,
+  Clock,
+  Copy,
+  Globe,
+  MoreVertical,
+  Pencil,
+  RefreshCw,
+  Trash2,
+  Wallet,
+} from 'lucide-vue-next'
 import type { QuotaAccount, QuotaSnapshot } from '../../api/main'
 import { formatDateTime, statusColor, statusTagColor, statusTextKey } from '../../utils/format'
 
@@ -154,6 +189,8 @@ const updateTimeText = computed(() =>
     ? t('quota.account.updatedAt', { time: formatDateTime(props.snapshot.updatedAt) })
     : t('quota.account.accountUpdatedAt', { time: formatDateTime(props.account.updatedAt) })
 )
+
+const updateTimeValue = computed(() => formatDateTime(props.snapshot?.updatedAt || props.account.updatedAt))
 
 // 卡片保持紧凑：额度窗口最多展示 3 条，其余进入详情弹窗
 const MAX_WINDOWS = 3
@@ -186,6 +223,13 @@ const tagLabel = computed(() => {
 function progressColor(status: string): string {
   return statusColor(status)
 }
+
+function onActionSelect(info: { key: string | number }) {
+  const key = String(info.key)
+  if (key === 'screenshot') emit('screenshot')
+  else if (key === 'edit') emit('edit')
+  else if (key === 'delete') emit('delete')
+}
 </script>
 
 <style scoped>
@@ -197,6 +241,59 @@ function progressColor(status: string): string {
 
 .card-details {
   flex: 1 1 auto;
+}
+
+/* 卡片操作按钮：更紧凑，且默认隐藏、hover 时显示 */
+.card-actions :deep(.ant-btn) {
+  padding: 0 3px;
+  height: 22px;
+  min-width: 22px;
+}
+.card-actions :deep(.ant-btn + .ant-btn) {
+  margin-left: 0;
+}
+
+/* 额度窗口使用网格对齐：标签列与数值列自适应同一宽度，进度条左右边界对齐，文字不换行不截断 */
+.window-grid {
+  display: grid;
+  grid-template-columns: minmax(0, auto) minmax(0, 1fr) auto;
+  column-gap: 8px;
+  row-gap: 4px;
+  align-items: center;
+}
+
+.window-label {
+  font-size: 11px;
+  line-height: 1.4;
+  color: #6b7280;
+  max-width: 96px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.window-bar {
+  min-width: 0;
+}
+
+.window-value {
+  font-size: 11px;
+  line-height: 1.4;
+  color: #6b7280;
+  text-align: right;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.window-more {
+  grid-column: 1 / -1;
+  font-size: 10px;
+  color: var(--token-primary-600);
+}
+
+:global(.dark .quota-card .window-label),
+:global(.dark .quota-card .window-value) {
+  color: #d1d5db;
 }
 
 :global(.dark .quota-card) {

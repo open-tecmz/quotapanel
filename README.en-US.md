@@ -31,7 +31,7 @@
 
 | Feature | Description |
 |---------|-------------|
-| **Multi-source aggregation** | 15 AI subscription and API quota sources, shown as unified cards |
+| **Multi-source aggregation** | 16 AI subscription and API quota sources, shown as unified cards |
 | **Quota visualization** | Quota windows, balances, usage stats, reset and billing times in one place |
 | **Detail modal** | Click a card to see all quota windows, balances and usage details |
 | **Status hints** | Normal / Nearly exhausted / Exceeded status colors with threshold warnings |
@@ -53,6 +53,7 @@
 | **Claude** | Read 5-hour and weekly quotas after signing in to Claude in the dedicated window |
 | **ChatGPT / Codex** | Read the Codex subscription usage window after signing in to ChatGPT |
 | **Cursor** | Read the current billing cycle usage after signing in to Cursor |
+| **Xiaomi MiMo Token Plan** | Read Token Plan credits and account balance after signing in to the MiMo platform |
 
 ### API Key
 

@@ -185,6 +185,10 @@ onMounted(async () => {
     const { selector } = params as { selector: string }
     return document.querySelectorAll(selector).length
   })
+  testActionSet('App.className', (params: unknown) => {
+    const { selector } = params as { selector: string }
+    return document.querySelector(selector)?.getAttribute('class') ?? null
+  })
   testActionSet('App.getText', (params: unknown) => {
     const { selector } = params as { selector: string }
     return document.querySelector(selector)?.textContent?.trim() ?? null

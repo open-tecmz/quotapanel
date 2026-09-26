@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strings"
 	"time"
+
+	"quotapanel/backend/base/logging"
 )
 
 // 这些端点来自站点自身的登录会话，可能随站点更新而变化。
@@ -41,6 +43,9 @@ func browserFetch(qc *QueryContext, pageURL, script string, out any) error {
 	if len(res.Body) == 0 || string(res.Body) == "null" {
 		return fmt.Errorf("额度接口未返回数据")
 	}
+	// 浏览器类供应商的接口没有公开文档，响应结构靠逆向推断，容易随站点改版失效。
+	// 这里把原始响应写入日志，便于对照真实结构校正 provider 的字段映射。
+	logging.Debug("quota browser raw response: %s", truncateText(strings.Join(strings.Fields(string(res.Body)), ""), 800))
 	return json.Unmarshal(res.Body, out)
 }
 

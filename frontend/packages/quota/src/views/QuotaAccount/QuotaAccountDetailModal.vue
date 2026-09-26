@@ -162,9 +162,7 @@ function progressColor(status: string): string {
 
 <style scoped>
 .quota-detail {
-  max-height: 68vh;
-  overflow-y: auto;
-  padding-right: 2px;
+  overflow-x: hidden;
 }
 
 .detail-head {
@@ -181,6 +179,8 @@ function progressColor(status: string): string {
   background: #fef2f2;
   border-radius: 10px;
   padding: 10px 12px;
+  word-break: break-all;
+  overflow-wrap: anywhere;
 }
 
 .detail-section {
@@ -226,6 +226,7 @@ function progressColor(status: string): string {
   background: #f0f9f9;
   border-radius: 10px;
   padding: 10px 12px;
+  word-break: break-word;
 }
 
 .detail-empty {

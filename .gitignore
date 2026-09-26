@@ -20,6 +20,10 @@ frontend/packages/ui/wailsjs/runtime/
 # Screenshot batch temp
 /_temp/
 
+# webfetch（网页取数工具）的登录资料与导出结果
+scripts/webfetch/.profiles/
+scripts/webfetch/.out/
+
 # TypeScript build info
 *.tsbuildinfo
 

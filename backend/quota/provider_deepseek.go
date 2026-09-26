@@ -6,6 +6,9 @@ import (
 	"strings"
 )
 
+// deepseekAPIBase 为 DeepSeek 开放平台 API 基址。
+const deepseekAPIBase = "https://api.deepseek.com"
+
 func init() { Register(deepseekProvider{}) }
 
 type deepseekProvider struct{}
@@ -25,8 +28,12 @@ type deepseekBalance struct {
 }
 
 func (deepseekProvider) Query(qc *QueryContext) (*Snapshot, error) {
+	return queryDeepseek(qc, deepseekAPIBase)
+}
+
+func queryDeepseek(qc *QueryContext, apiBase string) (*Snapshot, error) {
 	var resp deepseekBalance
-	if err := httpGetJSON("https://api.deepseek.com/user/balance", map[string]string{"Authorization": "Bearer " + strings.TrimSpace(qc.Account.Key)}, &resp); err != nil {
+	if err := httpGetJSON(apiBase+"/user/balance", map[string]string{"Authorization": "Bearer " + strings.TrimSpace(qc.Account.Key)}, &resp); err != nil {
 		return nil, err
 	}
 	if len(resp.BalanceInfos) == 0 {
@@ -38,11 +45,33 @@ func (deepseekProvider) Query(qc *QueryContext) (*Snapshot, error) {
 	}
 	for _, b := range resp.BalanceInfos {
 		currency := strings.TrimSpace(b.Currency)
-		snap.Balances = append(snap.Balances, Stat{Label: "可用余额（" + currency + "）", Value: b.Total})
-		snap.Stats = append(snap.Stats, Stat{Label: "赠送余额", Value: b.Granted}, Stat{Label: "充值余额", Value: b.ToppedUp})
+		snap.Balances = append(snap.Balances, Stat{Label: "可用余额", Value: money(b.Total, currency)})
+		snap.Stats = append(snap.Stats,
+			Stat{Label: "赠送余额", Value: money(b.Granted, currency), Muted: true},
+			Stat{Label: "充值余额", Value: money(b.ToppedUp, currency), Muted: true},
+		)
 		if n, err := strconv.ParseFloat(b.Total, 64); err == nil && n <= 0 {
 			snap.Status = "exceeded"
 		}
 	}
 	return snap, nil
+}
+
+// money 按币种为金额加上符号，空值统一显示为 0。
+func money(amount, currency string) string {
+	amount = strings.TrimSpace(amount)
+	if amount == "" {
+		amount = "0"
+	}
+	symbol := ""
+	switch strings.ToUpper(strings.TrimSpace(currency)) {
+	case "CNY":
+		symbol = "¥"
+	case "USD":
+		symbol = "$"
+	}
+	if symbol == "" {
+		return amount + " " + strings.TrimSpace(currency)
+	}
+	return symbol + amount
 }

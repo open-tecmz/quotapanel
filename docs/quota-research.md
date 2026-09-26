@@ -7,6 +7,7 @@
 | Claude 订阅 | 独立浏览器登录，站内用量接口 | 已接入 |
 | ChatGPT / Codex | 独立浏览器登录，站内用量接口 | 已接入 |
 | Cursor | 独立浏览器登录，站内用量接口 | 已接入 |
+| Xiaomi MiMo Token Plan | 独立浏览器登录，按规则解析控制台页面 DOM（tp- API Key 仅用于模型调用，无法查询额度） | 已接入 |
 | Z.ai Coding Plan | API Key | 已接入 |
 | Kimi Coding Plan | Coding Plan Key | 已接入 |
 | MiniMax Token Plan | API Key | 已接入 |
