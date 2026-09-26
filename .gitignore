@@ -1,0 +1,32 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+build/bin/
+package.json.md5
+
+# Wails generated bindings (auto-generated)
+frontend/packages/ui/wailsjs/go/main/
+frontend/packages/ui/wailsjs/runtime/
+
+# Runtime logs
+/logs/
+*.log
+
+# Screenshot working dirs (raw images, comparison baseline, intermediate json);
+# mockup output is kept in demo/image/
+
+# Screenshot batch temp
+/_temp/
+
+# TypeScript build info
+*.tsbuildinfo
+
+# OS / editor files
+.DS_Store
+Thumbs.db
+
+# Agent symlinks
+/.agents
+/AGENTS.md

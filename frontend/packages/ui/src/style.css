@@ -1,0 +1,403 @@
+@import './theme/tokens.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  font-family:
+    'Inter',
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    sans-serif;
+  background-color: var(--token-neutral-50);
+  color: var(--token-neutral-900);
+  color-scheme: light;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  background-image:
+    radial-gradient(circle at 0% 0%, rgba(var(--token-primary-rgb), 0.08), transparent 50%),
+    radial-gradient(circle at 100% 0%, rgba(59, 130, 246, 0.06), transparent 50%),
+    radial-gradient(circle at 100% 100%, rgba(139, 92, 246, 0.05), transparent 50%);
+  background-attachment: fixed;
+}
+
+.dark body {
+  background-color: var(--token-neutral-900);
+  color: var(--token-neutral-100);
+  color-scheme: dark;
+  background-image:
+    radial-gradient(circle at 0% 0%, rgba(var(--token-primary-rgb), 0.12), transparent 50%),
+    radial-gradient(circle at 100% 0%, rgba(59, 130, 246, 0.08), transparent 50%),
+    radial-gradient(circle at 100% 100%, rgba(139, 92, 246, 0.06), transparent 50%);
+}
+
+html.dark {
+  background: var(--token-neutral-900);
+  color-scheme: dark;
+}
+
+.dark .app-layout,
+.dark .main-content {
+  background-color: var(--token-neutral-900);
+  color: var(--token-neutral-100);
+}
+
+#app {
+  height: 100%;
+}
+
+.app-shell {
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  gap: 0;
+  background: transparent;
+  height: 100%;
+}
+
+.app-layout {
+  position: relative;
+  padding-left: 100px;
+  flex: 1;
+  min-height: 0;
+}
+
+.main-content {
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.main-content > * {
+  flex: 1;
+  min-height: 0;
+}
+
+.app-body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  flex: 1;
+  min-height: 0;
+}
+
+/* Ant Design 主题覆盖 — 兼容 AntD Vue v4 CSS-in-JS */
+/* 主色按钮 */
+.ant-btn-primary,
+.ant-btn-color-primary.ant-btn-variant-solid {
+  background-color: var(--token-primary-500) !important;
+  border-color: var(--token-primary-500) !important;
+  color: #fff !important;
+}
+
+.ant-btn-primary:not(:disabled):hover,
+.ant-btn-color-primary.ant-btn-variant-solid:not(:disabled):hover {
+  background-color: var(--token-primary-600) !important;
+  border-color: var(--token-primary-600) !important;
+}
+
+/* 修复按钮图标居中 */
+.ant-btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 6px !important;
+}
+
+.ant-btn > .ant-btn-icon {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.ant-btn > span {
+  display: inline-flex !important;
+  align-items: center !important;
+}
+
+.ant-switch-checked {
+  background-color: var(--token-primary-500) !important;
+}
+
+.ant-tag-success {
+  color: var(--token-primary-500) !important;
+  background: rgba(var(--token-primary-rgb), 0.1) !important;
+  border-color: rgba(var(--token-primary-rgb), 0.3) !important;
+}
+
+.ant-tag-error {
+  color: var(--token-danger) !important;
+  background: rgba(var(--token-danger-rgb), 0.1) !important;
+  border-color: rgba(var(--token-danger-rgb), 0.3) !important;
+}
+
+.ant-tag-default {
+  color: var(--token-neutral-500) !important;
+  background: rgba(var(--token-neutral-500-rgb), 0.1) !important;
+  border-color: rgba(var(--token-neutral-500-rgb), 0.3) !important;
+}
+
+.dark .ant-tag-success {
+  color: var(--token-primary-700) !important;
+  background: rgba(var(--token-primary-rgb), 0.16) !important;
+  border-color: rgba(var(--token-primary-400-rgb), 0.45) !important;
+}
+
+.dark .ant-tag-error {
+  color: #fca5a5 !important;
+  background: rgba(var(--token-danger-rgb), 0.16) !important;
+  border-color: rgba(248, 113, 113, 0.45) !important;
+}
+
+.dark .ant-tag-default {
+  color: var(--token-neutral-300) !important;
+  background: rgba(var(--token-neutral-500-rgb), 0.2) !important;
+  border-color: rgba(var(--token-neutral-400-rgb), 0.35) !important;
+}
+
+/* 深色模式下的 Ant Design 样式 */
+.dark .ant-modal-content {
+  background-color: var(--token-neutral-800) !important;
+}
+
+.dark .ant-modal-header {
+  background-color: var(--token-neutral-800) !important;
+  border-bottom-color: var(--token-neutral-700) !important;
+}
+
+.dark .ant-modal-title {
+  color: var(--token-neutral-100) !important;
+}
+
+.dark .ant-modal-close-x {
+  color: var(--token-neutral-400) !important;
+}
+
+.dark .ant-form-item-label > label {
+  color: var(--token-neutral-200) !important;
+}
+
+.dark .ant-input {
+  background-color: var(--token-neutral-900) !important;
+  border-color: var(--token-neutral-700) !important;
+  color: var(--token-neutral-100) !important;
+}
+
+.dark .ant-input-affix-wrapper,
+.dark .ant-input-affix-wrapper .ant-input,
+.dark textarea.ant-input {
+  background-color: var(--token-neutral-900) !important;
+  border-color: var(--token-neutral-600) !important;
+  color: var(--token-neutral-100) !important;
+}
+
+.dark .ant-input-affix-wrapper-focused,
+.dark .ant-input:focus,
+.dark .ant-input-focused,
+.dark .ant-select-focused .ant-select-selector {
+  border-color: var(--token-primary-600) !important;
+  box-shadow: 0 0 0 2px rgba(var(--token-primary-400-rgb), 0.16) !important;
+}
+
+.dark .ant-input::placeholder {
+  color: var(--token-neutral-500) !important;
+}
+
+.dark .ant-select-selector {
+  background-color: var(--token-neutral-900) !important;
+  border-color: var(--token-neutral-700) !important;
+  color: var(--token-neutral-100) !important;
+}
+
+.dark .ant-select-arrow {
+  color: var(--token-neutral-500) !important;
+}
+
+.dark .ant-select-dropdown,
+.dark .ant-dropdown-menu,
+.dark .ant-menu-submenu-popup {
+  background-color: var(--token-panel) !important;
+  border: 1px solid #374151 !important;
+}
+
+.dark .ant-select-item,
+.dark .ant-dropdown-menu-item {
+  color: #e5e7eb !important;
+}
+
+.dark .ant-select-item-option-active,
+.dark .ant-dropdown-menu-item:hover {
+  background-color: #374151 !important;
+}
+
+.dark .ant-select-item-option-selected {
+  background-color: var(--token-primary-100) !important;
+  color: var(--token-primary-800) !important;
+}
+
+.dark .ant-btn-default,
+.dark .ant-btn-variant-outlined,
+.dark .ant-btn-variant-dashed {
+  background-color: var(--token-panel) !important;
+  border-color: var(--token-neutral-600) !important;
+  color: #e5e7eb !important;
+}
+
+.dark .ant-btn-default:hover,
+.dark .ant-btn-variant-outlined:hover,
+.dark .ant-btn-variant-dashed:hover {
+  color: var(--token-primary-700) !important;
+  border-color: var(--token-primary-600) !important;
+}
+
+.dark .ant-input-number {
+  background-color: var(--token-neutral-900) !important;
+  border-color: var(--token-neutral-700) !important;
+}
+
+.dark .ant-input-number-input {
+  color: var(--token-neutral-100) !important;
+  background-color: var(--token-neutral-900) !important;
+}
+
+.dark .ant-tabs-tab-active .ant-tabs-tab-btn {
+  color: var(--primary-color) !important;
+}
+
+.dark .ant-tabs-ink-bar {
+  background-color: var(--primary-color) !important;
+}
+
+.dark .ant-divider {
+  border-color: var(--token-neutral-700) !important;
+}
+
+.dark .ant-card {
+  background-color: var(--token-neutral-800) !important;
+  border-color: var(--token-neutral-700) !important;
+}
+
+.dark .ant-card-head {
+  border-bottom-color: var(--token-neutral-700) !important;
+  color: var(--token-neutral-100) !important;
+}
+
+.dark .ant-radio-button-wrapper {
+  background-color: var(--token-neutral-900) !important;
+  border-color: var(--token-neutral-700) !important;
+  color: var(--token-neutral-400) !important;
+}
+
+.dark .ant-radio-button-wrapper-checked {
+  background-color: var(--token-primary-500) !important;
+  border-color: var(--token-primary-500) !important;
+  color: white !important;
+}
+
+.ant-radio-button-wrapper-checked {
+  background-color: var(--token-primary-500) !important;
+  border-color: var(--token-primary-500) !important;
+  color: white !important;
+}
+
+.dark .ant-empty-description {
+  color: var(--token-neutral-500) !important;
+}
+
+.dark .ant-popover-inner {
+  background-color: var(--token-neutral-800) !important;
+}
+
+.dark .ant-popover-message-title {
+  color: var(--token-neutral-100) !important;
+}
+
+.dark .ant-popover-inner,
+.dark .ant-tooltip-inner,
+.dark .ant-message-notice-content,
+.dark .ant-notification-notice,
+.dark .ant-popconfirm,
+.dark .ant-popconfirm-inner-content {
+  background-color: var(--token-panel) !important;
+  color: var(--token-neutral-100) !important;
+  border-color: #374151 !important;
+}
+
+.dark .ant-popover-title,
+.dark .ant-popover-inner-content,
+.dark .ant-notification-notice-message,
+.dark .ant-notification-notice-description {
+  color: #e5e7eb !important;
+}
+
+.dark .ant-form-item-explain-error {
+  color: #fca5a5 !important;
+}
+
+/* 滚动条样式 */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--token-neutral-300);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--token-neutral-400);
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: var(--token-neutral-600);
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: var(--token-neutral-500);
+}
+
+/* 动画 */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-in {
+  animation: fadeIn 0.3s ease-out;
+}
+
+/* 禁用拖拽区域 */
+.titlebar-btn {
+  -webkit-app-region: no-drag;
+}
+
+.ant-dropdown {
+  -webkit-app-region: no-drag;
+}

@@ -1,0 +1,11 @@
+packages:
+  - "packages/*"
+
+# pnpm 11 replaced onlyBuiltDependencies with allowBuilds
+allowBuilds:
+  esbuild: true
+  core-js: true
+
+# Allow pnpm to purge & rebuild node_modules without TTY confirmation
+# (required when wails invokes `pnpm install` in a non-interactive environment)
+confirmModulesPurge: false

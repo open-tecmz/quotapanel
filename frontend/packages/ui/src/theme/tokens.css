@@ -1,0 +1,103 @@
+/* ================================================================
+ * 视觉设计 Tokens — CSS 变量定义
+ *
+ * 所有颜色 Token 的值与 src/theme/tokens.ts 保持一致。
+ * 修改颜色时请同步更新两个文件。
+ * ================================================================ */
+
+/* ── 亮色模式默认值 ──────────────────────────────────────────── */
+:root {
+  /* 品牌主色色阶（基准色 #018b8d，青绿方向） */
+  --token-primary-50: #f0f9f9;
+  --token-primary-100: #dbf5f5;
+  --token-primary-200: #b3eeef;
+  --token-primary-300: #7be8ea;
+  --token-primary-400: #25d2d4;
+  --token-primary-500: #018b8d;
+  --token-primary-600: #037172;
+  --token-primary-700: #045c5d;
+  --token-primary-800: #054748;
+  --token-primary-900: #053838;
+  /* 别名 */
+  --token-primary: var(--token-primary-500);
+  --token-primary-hover: var(--token-primary-600);
+
+  /* 语义色 */
+  --token-success: #52c41a;
+  --token-warning: #faad14;
+  --token-error: #ff4d4f;
+  --token-accent: #722ed1;
+
+  /* 布局背景 */
+  --token-surface: #ffffff;
+  --token-panel: #f9fafb;
+
+  /* Glassmorphism */
+  --token-glass: rgba(255, 255, 255, 0.7);
+  --token-glass-hover: rgba(255, 255, 255, 0.9);
+  --token-glass-border: rgba(229, 231, 235, 0.8);
+  --token-glass-border-hover: rgba(147, 197, 253, 0.6);
+
+  /* 正文颜色 */
+  --token-text: #111827;
+
+  /* 语义补充 */
+  --token-danger: #ef4444;
+  --token-warning-strong: #d97706;
+  --token-warning-light: #fbbf24;
+
+  /* 中性色阶（Tailwind slate；亮/暗模式数值相同） */
+  --token-neutral-50: #f8fafc;
+  --token-neutral-100: #f1f5f9;
+  --token-neutral-200: #e2e8f0;
+  --token-neutral-300: #cbd5e1;
+  --token-neutral-400: #94a3b8;
+  --token-neutral-500: #64748b;
+  --token-neutral-600: #475569;
+  --token-neutral-700: #334155;
+  --token-neutral-800: #1e293b;
+  --token-neutral-900: #0f172a;
+  --token-neutral-950: #020617;
+
+  /* RGB 分量（供 rgba(var(--token-xxx-rgb), a) 使用；数值与 tokens.ts 一致） */
+  --token-primary-rgb: 1, 139, 141;
+  --token-primary-400-rgb: 37, 210, 212;
+  --token-danger-rgb: 239, 68, 68;
+  --token-neutral-200-rgb: 226, 232, 240;
+  --token-neutral-300-rgb: 203, 213, 225;
+  --token-neutral-400-rgb: 148, 163, 184;
+  --token-neutral-500-rgb: 100, 116, 139;
+  --token-neutral-700-rgb: 51, 65, 85;
+  --token-neutral-800-rgb: 30, 41, 59;
+
+  /* ── 向后兼容旧变量名 ─────────────────────────────────────── */
+  --primary-color: var(--token-primary);
+  --primary-hover: var(--token-primary-hover);
+  --background-color: var(--token-surface);
+  --surface-color: var(--token-panel);
+}
+
+/* ── 暗色模式覆盖 ─────────────────────────────────────────────── */
+.dark {
+  --token-primary-50: #042f30;
+  --token-primary-100: #053838;
+  --token-primary-200: #054748;
+  --token-primary-300: #045c5d;
+  --token-primary-400: #037172;
+  --token-primary-500: #018b8d;
+  --token-primary-600: #25d2d4;
+  --token-primary-700: #7be8ea;
+  --token-primary-800: #b3eeef;
+  --token-primary-900: #dbf5f5;
+  --token-primary: var(--token-primary-400);
+  --token-primary-hover: var(--token-primary-500);
+
+  --token-surface: #111827;
+  --token-panel: #1f2937;
+  --token-text: #f3f4f6;
+
+  --token-glass: rgba(31, 41, 55, 0.7);
+  --token-glass-hover: rgba(31, 41, 55, 0.9);
+  --token-glass-border: rgba(55, 65, 81, 0.8);
+  --token-glass-border-hover: rgba(59, 130, 246, 0.6);
+}
