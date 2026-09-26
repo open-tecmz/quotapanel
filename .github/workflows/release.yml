@@ -49,7 +49,7 @@ jobs:
           GIT_REPO_BASE: ${{ secrets.GIT_REPO_BASE }}
           GIT_HOST: ${{ secrets.GIT_HOST }}
         run: |
-          git clone -b main "https://${GIT_USER}:${GIT_PASS}@${GIT_HOST}/${GIT_REPO_BASE}/quotapanel-pro.git" code
+          git clone -b main "https://github.com/open-tecmz/quotapanel.git" code
 
       - name: Git clone repo
         if: runner.os == 'Windows'
@@ -60,7 +60,7 @@ jobs:
           GIT_HOST: ${{ secrets.GIT_HOST }}
         shell: pwsh
         run: |
-          git clone -b main "https://${env:GIT_USER}:${env:GIT_PASS}@${env:GIT_HOST}/${env:GIT_REPO_BASE}/quotapanel-pro.git" code
+          git clone -b main "https://github.com/open-tecmz/quotapanel.git" code
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
