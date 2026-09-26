@@ -314,6 +314,8 @@ jobs:
     name: Create Release
     needs: [build]
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
       - name: Download All Artifacts
@@ -330,12 +332,13 @@ jobs:
           # Delete any existing release for this tag (handles force-push)
           gh release delete "$TAG" --yes 2>/dev/null || true
           # Create release (draft, idempotent)
-          gh release create "$TAG" \
-            --title "$TAG" \
-            --draft \
-            --prerelease=false \
-            --notes "" \
-            2>/dev/null || true
+          if ! gh release view "$TAG" >/dev/null 2>&1; then
+            gh release create "$TAG" \
+              --title "$TAG" \
+              --draft \
+              --prerelease=false \
+              --notes ""
+          fi
           # Upload all artifacts
           find _artifacts/ -type f | while read f; do
             echo "Uploading: $(basename "$f")"
@@ -348,6 +351,9 @@ jobs:
     needs: [release]
     if: success()
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: write
     steps:
       - uses: actions/checkout@v4
 

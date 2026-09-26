@@ -316,6 +316,8 @@ jobs:
     needs: [build]
     if: success()
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
       - name: Download All Artifacts
@@ -329,11 +331,12 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           # Ensure vsnapshot release exists (create if not)
-          gh release create vsnapshot \
-            --title "Snapshot" \
-            --notes "Latest build from main branch" \
-            --prerelease \
-            2>/dev/null || true
+          if ! gh release view vsnapshot >/dev/null 2>&1; then
+            gh release create vsnapshot \
+              --title "Snapshot" \
+              --notes "Latest build from main branch" \
+              --prerelease
+          fi
           # Copy artifacts to temp dir with version replaced by "snapshot"
           tmpdir=$(mktemp -d)
           echo "=== Downloaded artifacts ==="
@@ -358,6 +361,9 @@ jobs:
     needs: [build, vsnapshot-release]
     if: success()
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: write
     steps:
       - uses: actions/checkout@v4
 
