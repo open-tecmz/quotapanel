@@ -326,16 +326,25 @@ jobs:
           pattern: quotapanel-*
           path: _artifacts
           merge-multiple: false
+      - name: Read Version
+        run: |
+          VERSION=$(sed -n 's/.*Version:[[:space:]]*"v*\([^"]*\)".*/\1/p' app.go | head -1)
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          echo "Snapshot release title: snapshot-${VERSION}"
       - name: Upload to Snapshot Release (with overwrite)
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          TITLE="snapshot-${VERSION}"
           # Ensure vsnapshot release exists (create if not)
           if ! gh release view vsnapshot >/dev/null 2>&1; then
             gh release create vsnapshot \
-              --title "Snapshot" \
+              --title "$TITLE" \
               --notes "Latest build from main branch" \
               --prerelease
+          else
+            # Update the title to the current version
+            gh release edit vsnapshot --title "$TITLE"
           fi
           # Copy artifacts to temp dir with version replaced by "snapshot"
           tmpdir=$(mktemp -d)
