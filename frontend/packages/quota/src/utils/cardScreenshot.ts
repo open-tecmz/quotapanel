@@ -1,6 +1,6 @@
 import { designTokens } from '@quotapanel/ui/src/theme/tokens'
 import type { QuotaAccount, QuotaSnapshot } from '../api/main'
-import { formatDateTime, statusColor, statusLabel } from './format'
+import { formatDateTime, hasResetTime, statusColor, statusLabel } from './format'
 
 // 用 Canvas 绘制完整卡片内容，避免 WebKit 对 HTML foreignObject 截图的限制。
 export function renderCardScreenshot(
@@ -98,7 +98,9 @@ export function renderCardScreenshot(
       line(window.detail || `${Math.round(window.percent)}%`, 362, y, 180, 11)
       box(16, y + 11, 528, 6, 3, '#e5e7eb')
       box(16, y + 11, (528 * Math.max(0, Math.min(100, window.percent))) / 100, 6, 3, statusColor(window.status))
-      line(`${locale === 'en' ? 'Resets' : '重置时间'}：${window.resetAt || '-'}`, 16, y + 27, 528, 10, color.light)
+      if (hasResetTime(window.resetAt)) {
+        line(`${locale === 'en' ? 'Resets' : '重置时间'}：${window.resetAt}`, 16, y + 27, 528, 10, color.light)
+      }
       y += 39
     }
     for (const stat of stats) {

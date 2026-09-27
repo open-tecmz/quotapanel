@@ -38,6 +38,12 @@ export function statusLabel(status: string | undefined): string {
   }
 }
 
+// 判断额度窗口的重置 / 周期时间是否有效（空值与占位符 '-' 视为无周期）。
+export function hasResetTime(v: string | null | undefined): boolean {
+  const s = (v ?? '').trim()
+  return s !== '' && s !== '-'
+}
+
 // 按状态返回 Ant 标签颜色。
 export function statusTagColor(status: string | undefined): string {
   switch (status) {

@@ -48,8 +48,8 @@
                 :show-info="false"
                 size="small"
               />
-              <div class="text-[11px] text-gray-400 truncate mt-0.5">
-                {{ t('quota.account.resetAt') }}：{{ w.resetAt || '-' }}
+              <div v-if="hasResetTime(w.resetAt)" class="text-[11px] text-gray-400 truncate mt-0.5">
+                {{ t('quota.account.resetAt') }}：{{ w.resetAt }}
               </div>
             </div>
           </div>
@@ -117,7 +117,7 @@ import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { BarChart3, Coins, Gauge } from 'lucide-vue-next'
 import type { QuotaAccount, QuotaSnapshot } from '../../api/main'
-import { formatDateTime, statusColor, statusTagColor, statusTextKey } from '../../utils/format'
+import { formatDateTime, hasResetTime, statusColor, statusTagColor, statusTextKey } from '../../utils/format'
 
 const { t } = useI18n()
 

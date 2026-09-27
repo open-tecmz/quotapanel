@@ -75,13 +75,14 @@ func (mimoProvider) Query(qc *QueryContext) (*Snapshot, error) {
 			Label:   "套餐用量",
 			Percent: percent,
 			Status:  status,
-			Detail:  strings.TrimSpace(page.Used + " / " + page.Limit),
+			Detail:  humanizeTokens(parseAmount(page.Used)) + " / " + humanizeTokens(parseAmount(page.Limit)),
 			ResetAt: page.ExpiresAt,
 		})
 	}
 
 	if page.TokenTotal != "" {
-		snap.Stats = append(snap.Stats, Stat{Label: "Token 总消耗", Value: page.TokenTotal})
+		n := parseAmount(strings.TrimSuffix(strings.TrimSpace(page.TokenTotal), " Tokens"))
+		snap.Stats = append(snap.Stats, Stat{Label: "Token 总消耗", Value: humanizeTokens(n) + " Tokens"})
 	}
 	if page.RequestCount != "" {
 		snap.Stats = append(snap.Stats, Stat{Label: "请求次数", Value: page.RequestCount, Muted: true})
@@ -96,4 +97,24 @@ func (mimoProvider) Query(qc *QueryContext) (*Snapshot, error) {
 func parseAmount(s string) float64 {
 	v, _ := strconv.ParseFloat(strings.ReplaceAll(strings.TrimSpace(s), ",", ""), 64)
 	return v
+}
+
+// humanizeTokens 把原始 token 数换算成 K / M / B / T 易读单位（如 508,596,984 -> 508.6M）。
+func humanizeTokens(n float64) string {
+	units := []struct {
+		value  float64
+		suffix string
+	}{{1e12, "T"}, {1e9, "B"}, {1e6, "M"}, {1e3, "K"}}
+	for i, u := range units {
+		if n < u.value {
+			continue
+		}
+		out := strings.TrimSuffix(fmt.Sprintf("%.1f", n/u.value), ".0")
+		if out == "1000" && i > 0 {
+			u = units[i-1]
+			out = strings.TrimSuffix(fmt.Sprintf("%.1f", n/u.value), ".0")
+		}
+		return out + u.suffix
+	}
+	return strconv.FormatFloat(n, 'f', -1, 64)
 }

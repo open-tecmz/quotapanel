@@ -46,12 +46,7 @@
         <div v-if="snapshot.plan" class="text-[11px] text-gray-500 mb-1 truncate">{{ snapshot.plan }}</div>
         <div v-if="visibleWindows.length" class="window-grid">
           <template v-for="w in visibleWindows" :key="w.key">
-            <span
-              class="window-label"
-              :title="w.resetAt ? `${w.label} · ${t('quota.account.resetAt')}: ${w.resetAt}` : w.label"
-            >
-              {{ w.label }}
-            </span>
+            <span class="window-label" :title="w.label">{{ w.label }}</span>
             <a-progress
               class="window-bar"
               :percent="Math.min(100, Math.round(w.percent))"
@@ -62,6 +57,14 @@
             <span class="window-value" :title="w.detail || `${w.percent.toFixed(0)}%`">
               {{ w.detail || `${w.percent.toFixed(0)}%` }}
             </span>
+            <div
+              v-if="hasResetTime(w.resetAt)"
+              class="window-reset"
+              :title="`${t('quota.account.resetAt')}：${w.resetAt}`"
+            >
+              <CalendarClock class="w-3 h-3 shrink-0" aria-hidden="true" />
+              <span class="window-reset-text">{{ t('quota.account.resetAt') }} {{ w.resetAt }}</span>
+            </div>
           </template>
           <div v-if="hiddenWindowCount" class="window-more">
             {{ t('quota.account.moreWindows', { count: hiddenWindowCount }) }}
@@ -150,6 +153,7 @@
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import {
+  CalendarClock,
   Camera,
   CircleCheck,
   Clock,
@@ -162,7 +166,7 @@ import {
   Wallet,
 } from 'lucide-vue-next'
 import type { QuotaAccount, QuotaSnapshot } from '../../api/main'
-import { formatDateTime, statusColor, statusTagColor, statusTextKey } from '../../utils/format'
+import { formatDateTime, hasResetTime, statusColor, statusTagColor, statusTextKey } from '../../utils/format'
 
 const { t } = useI18n()
 
@@ -283,6 +287,25 @@ function onActionSelect(info: { key: string | number }) {
   text-align: right;
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
+}
+
+.window-reset {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  min-width: 0;
+  margin-top: -2px;
+  font-size: 10px;
+  line-height: 1.3;
+  color: #9ca3af;
+}
+
+.window-reset-text {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
 .window-more {

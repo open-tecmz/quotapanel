@@ -153,10 +153,10 @@ func TestMimoPlanUsageMapping(t *testing.T) {
 		t.Fatalf("MiMo 应有且仅有一个套餐用量窗口: %+v", snap.Windows)
 	}
 	w := snap.Windows[0]
-	if w.Label != "套餐用量" || w.Detail != "508,596,984 / 4,100,000,000" || w.Percent != 12 || w.ResetAt != "2026-10-23 23:59:59 (UTC)" {
+	if w.Label != "套餐用量" || w.Detail != "508.6M / 4.1B" || w.Percent != 12 || w.ResetAt != "2026-10-23 23:59:59 (UTC)" {
 		t.Fatalf("MiMo 套餐用量不正确: %+v", w)
 	}
-	if len(snap.Stats) != 2 || snap.Stats[0].Value != "45,295,963 Tokens" || snap.Stats[1].Value != "213 次" {
+	if len(snap.Stats) != 2 || snap.Stats[0].Value != "45.3M Tokens" || snap.Stats[1].Value != "213 次" {
 		t.Fatalf("MiMo 用量统计不正确: %+v", snap.Stats)
 	}
 }
