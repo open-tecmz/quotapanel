@@ -3,6 +3,12 @@
 package platform
 
 /*
+// The menu bar / mini panel implementation is written in ARC style (strong
+// properties, no manual retain/release), so this package must be compiled with
+// ARC: cgo otherwise compiles Objective-C in manual reference counting mode,
+// where dispatch_async blocks do not retain the objects they capture and the
+// autoreleased strings passed to them are freed before the block runs.
+#cgo CFLAGS: -fobjc-arc
 #cgo LDFLAGS: -framework Cocoa
 
 #include <stdlib.h>

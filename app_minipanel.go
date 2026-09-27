@@ -34,7 +34,11 @@ func (a *App) onMiniPanelAction(action string, accountID int) {
 		a.showWindow()
 		if accountID > 0 && a.ctx != nil {
 			// 通知前端定位到该账号的详情弹窗。
-			runtime.EventsEmit(a.ctx, "mini:openAccount", accountID)
+			// 本回调由迷你面板的 WKScriptMessageHandler 触发，运行在 macOS 主线程的
+			// autorelease pool 内；Wails 的 ExecJS 会把脚本字符串额外 release 一次，
+			// 对 autorelease 字符串属于过度释放，在主线程调用会随机触发 objc_release
+			// 段错误。改到独立 goroutine 中发送即可避开。
+			go runtime.EventsEmit(a.ctx, "mini:openAccount", accountID)
 		}
 	}
 }
