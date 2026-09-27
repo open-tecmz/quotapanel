@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="{{.Lang}}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+/* 配色与 frontend/packages/ui/src/theme/tokens.css 保持一致；深浅色跟随系统
+   （WKWebView 会依据系统外观应用 prefers-color-scheme），改色时同步两侧。 */
+:root{
+  color-scheme:light dark;
+  --bg:#ffffff;--panel:#f9fafb;--border:#e2e8f0;--text:#111827;
+  --muted:#64748b;--faint:#94a3b8;--primary:#018b8d;--success:#52c41a;
+  --warning:#f59e0b;--danger:#ef4444;--track:#e2e8f0;--on-primary:#ffffff;
+}
+@media (prefers-color-scheme:dark){
+  :root{
+    --bg:#111827;--panel:#1f2937;--border:#374151;--text:#f3f4f6;
+    --muted:#cbd5e1;--faint:#94a3b8;--primary:#25d2d4;--success:#52c41a;
+    --warning:#f59e0b;--danger:#ef4444;--track:#374151;--on-primary:#053838;
+  }
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  font-family:Inter,-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;
+  background:var(--bg);color:var(--text);font-size:12px;overflow-y:auto;
+  -webkit-font-smoothing:antialiased;-webkit-user-select:none;user-select:none;
+}
+.head{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 12px 8px}
+.brand{display:flex;align-items:center;gap:6px;font-weight:600}
+.brand-dot{width:8px;height:8px;border-radius:50%;background:var(--primary);display:inline-block}
+.head-actions{display:flex;align-items:center;gap:6px}
+.icon-btn{width:24px;height:24px;padding:0;border:1px solid var(--border);border-radius:6px;background:var(--panel);color:var(--muted);display:flex;align-items:center;justify-content:center;cursor:pointer}
+.icon-btn:hover{color:var(--primary);border-color:var(--primary)}
+.icon-btn svg{width:13px;height:13px}
+.open-btn{display:inline-flex;align-items:center;gap:4px;height:24px;padding:0 8px;border:none;border-radius:6px;background:var(--primary);color:var(--on-primary);font-size:11px;font-weight:500;cursor:pointer}
+.open-btn svg{width:12px;height:12px}
+.list{padding:0 8px 4px;display:flex;flex-direction:column;gap:6px}
+.item{border:1px solid var(--border);border-radius:8px;padding:8px 10px;background:var(--panel);cursor:pointer;transition:border-color .15s ease}
+.item:hover{border-color:var(--primary)}
+.item-head{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.name{font-size:12px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.meta{font-size:10px;color:var(--faint);margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.plan{font-size:10px;color:var(--muted);margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.error{margin-top:4px;font-size:10px;line-height:1.4;color:var(--danger);background:rgba(239,68,68,.1);border-radius:6px;padding:3px 6px;word-break:break-all}
+.badge{font-size:10px;line-height:1;padding:3px 6px;border-radius:999px;white-space:nowrap;flex-shrink:0}
+.badge.ok{color:var(--success);background:rgba(82,196,26,.14)}
+.badge.warning{color:var(--warning);background:rgba(245,158,11,.16)}
+.badge.danger{color:var(--danger);background:rgba(239,68,68,.14)}
+.badge.neutral{color:var(--faint);background:rgba(148,163,184,.16)}
+.win{display:grid;grid-template-columns:minmax(0,auto) minmax(0,1fr) auto;align-items:center;column-gap:8px;margin-top:6px}
+.wlabel{font-size:10px;color:var(--muted);max-width:88px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bar{position:relative;display:block;height:5px;border-radius:999px;background:var(--track);overflow:hidden}
+.bar .fill{display:block;height:100%;border-radius:999px}
+.bar .fill.ok{background:var(--primary)}
+.bar .fill.warning{background:var(--warning)}
+.bar .fill.danger{background:var(--danger)}
+.bar .fill.muted{background:var(--faint)}
+.wval{font-size:10px;color:var(--muted);text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+.stat{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:5px;font-size:10px;color:var(--muted)}
+.stat.muted{color:var(--faint)}
+.stat-label{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.stat-value{max-width:60%;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.more{margin-top:5px;font-size:10px;color:var(--primary)}
+.empty{padding:22px 16px 26px;text-align:center}
+.empty-title{font-size:12px;font-weight:600}
+.empty-hint{font-size:10px;color:var(--faint);margin-top:4px;line-height:1.5}
+.foot{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 12px 9px;font-size:10px;color:var(--faint)}
+.foot-auto{white-space:nowrap}
+</style>
+</head>
+<body>
+<div class="head">
+  <div class="brand"><span class="brand-dot"></span><span class="brand-name">QuotaPanel</span></div>
+  <div class="head-actions">
+    <button class="icon-btn" data-action="refresh" title="{{.Refresh}}" aria-label="{{.Refresh}}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>
+    </button>
+    <button class="open-btn" data-action="open"><span>{{.Open}}</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg></button>
+  </div>
+</div>
+{{if .Items}}
+<div class="list">
+  {{range .Items}}
+  <div class="item" data-action="open" data-id="{{.ID}}">
+    <div class="item-head">
+      <span class="name">{{.Name}}</span>
+      <span class="badge {{.BadgeClass}}">{{.Badge}}</span>
+    </div>
+    <div class="meta">{{.Meta}}</div>
+    {{if .Error}}
+    <div class="error">{{.Error}}</div>
+    {{else}}
+    {{if .Plan}}<div class="plan">{{.Plan}}</div>{{end}}
+    {{if .Windows}}
+    {{range .Windows}}
+    <div class="win">
+      <span class="wlabel" title="{{.Label}}">{{.Label}}</span>
+      <span class="bar"><i class="fill {{.Class}}" style="width:{{.Width}}%"></i></span>
+      <span class="wval" title="{{.Value}}">{{.Value}}</span>
+    </div>
+    {{end}}
+    {{else if .Stats}}
+    {{range .Stats}}
+    <div class="{{if .Muted}}stat muted{{else}}stat{{end}}">
+      <span class="stat-label">{{.Label}}</span>
+      <span class="stat-value">{{.Value}}</span>
+    </div>
+    {{end}}
+    {{else}}
+    <div class="plan">{{.Empty}}</div>
+    {{end}}
+    {{if .More}}<div class="more">{{.More}}</div>{{end}}
+    {{end}}
+  </div>
+  {{end}}
+</div>
+<div class="foot">
+  <span>{{.UpdatedText}}</span>
+  <span class="foot-auto">{{.AutoRefresh}}</span>
+</div>
+{{else}}
+<div class="empty">
+  <div class="empty-title">{{.Empty}}</div>
+  <div class="empty-hint">{{.EmptyHint}}</div>
+</div>
+{{end}}
+<script>
+(function () {
+  function send(msg) {
+    try {
+      var handler = window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.quotapanel;
+      if (handler) handler.postMessage(msg);
+    } catch (e) {}
+  }
+  function fit() {
+    var height = Math.ceil(document.body.scrollHeight);
+    if (height > 0) send({ action: 'resize', height: height });
+  }
+  window.addEventListener('load', function () { fit(); setTimeout(fit, 40); });
+  document.addEventListener('click', function (event) {
+    var el = event.target && event.target.closest ? event.target.closest('[data-action]') : null;
+    if (!el) return;
+    var id = parseInt(el.getAttribute('data-id') || '0', 10) || 0;
+    send({ action: el.getAttribute('data-action'), accountId: id });
+  });
+})();
+</script>
+</body>
+</html>

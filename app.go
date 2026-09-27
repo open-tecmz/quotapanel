@@ -47,6 +47,13 @@ type App struct {
 	dataDir      string
 	logDir       string
 	quotaSvc     *quota.Service
+	// quotaSnaps caches the latest quota snapshots (guarded by quotaSnapMu) so
+	// the menu bar mini panel can render instantly without querying providers.
+	quotaSnaps  map[uint]*quota.Snapshot
+	quotaSnapMu sync.Mutex
+	// quotaQueryMu serializes full quota queries (poll / manual refresh / panel
+	// refresh) so browser-based providers are never queried concurrently.
+	quotaQueryMu sync.Mutex
 	// quitting is set when the app exits programmatically (tray menu, restart,
 	// resolved dialog) so onBeforeClose does not block the shutdown.
 	quitting atomic.Bool

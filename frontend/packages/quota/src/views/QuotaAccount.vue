@@ -181,6 +181,13 @@ function doDetail(account: QuotaAccount) {
   showDetail.value = true
 }
 
+// 菜单栏迷你面板点击某个账号：打开主窗口后定位到该账号详情。
+async function doOpenAccountFromMini(id: number) {
+  if (accounts.value.length === 0) await loadAccounts()
+  const account = accounts.value.find((item) => item.id === id)
+  if (account) doDetail(account)
+}
+
 function doDelete(account: QuotaAccount) {
   Modal.confirm({
     title: t('quota.account.deleteTitle'),
@@ -266,6 +273,9 @@ onMounted(() => {
     for (const snap of list || []) next[snap.accountId] = snap
     snapshots.value = next
   })
+  EventsOn('mini:openAccount', (id: number) => {
+    doOpenAccountFromMini(id)
+  })
   testActionSet('QuotaAccount.isLoading', () => loadingAccounts.value)
   testActionSet('QuotaAccount.getProviders', () => providers.value)
   testActionSet('QuotaAccount.getAccounts', () => accounts.value)
@@ -345,6 +355,11 @@ onMounted(() => {
   })
   testActionSet('QuotaAccount.closeDetail', () => {
     showDetail.value = false
+    return true
+  })
+  testActionSet('QuotaAccount.openAccountFromMini', async (params: unknown) => {
+    const { id } = params as { id: number }
+    await doOpenAccountFromMini(id)
     return true
   })
   testActionSet('QuotaAccount.getDetailState', () => {
@@ -442,6 +457,7 @@ onMounted(() => {
 
 onUnmounted(() => {
   EventsOff('quota:snapshots')
+  EventsOff('mini:openAccount')
   testActionUnset([
     'QuotaAccount.isLoading',
     'QuotaAccount.getProviders',
@@ -461,6 +477,7 @@ onUnmounted(() => {
     'QuotaAccount.previewSnapshot',
     'QuotaAccount.openDetail',
     'QuotaAccount.closeDetail',
+    'QuotaAccount.openAccountFromMini',
     'QuotaAccount.getDetailState',
     'QuotaAccount.cardDimensions',
     'QuotaAccount.getThemeStyles',

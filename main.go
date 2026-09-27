@@ -83,9 +83,10 @@ func wrapStartup(app *App) func(ctx context.Context) {
 		runtime.WindowShow(ctx)
 
 		// Create the menu bar (macOS) / system tray (Windows, Linux) item:
-		// left click shows the window, right click opens the Show / Restart / Quit menu.
+		// left click opens the quota mini panel on macOS (shows the window elsewhere),
+		// right click opens the Show / Restart / Quit menu.
 		platform.InitStatusBar(statusBarIcon(), app.statusBarLabels(), platform.StatusBarHandlers{
-			OnShow:    app.showWindow,
+			OnShow:    app.statusBarLeftClick,
 			OnRestart: app.restartApp,
 			OnQuit:    app.quitApp,
 		})

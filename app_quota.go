@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"os"
 
+	"quotapanel/backend/base/platform"
+
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
@@ -59,10 +61,21 @@ func (a *App) quotaCall(name string, decode func(interface{}) error) (interface{
 		if err := decode(&p); err != nil {
 			return nil, err
 		}
-		return a.quotaSvc.QueryAccount(p.ID)
+		snap, err := a.quotaSvc.QueryAccount(p.ID)
+		if err != nil {
+			return nil, err
+		}
+		a.storeQuotaSnapshot(snap)
+		return snap, nil
 
 	case "quota.queryAll":
-		return a.quotaSvc.QueryAll()
+		snaps, err := a.quotaSvc.QueryAll()
+		if err != nil {
+			return nil, err
+		}
+		a.storeQuotaSnapshots(snaps)
+		platform.ReloadMiniPanel(a.buildMiniPanelHTML())
+		return snaps, nil
 
 	case "quota.beginLogin":
 		var p struct {
@@ -80,7 +93,12 @@ func (a *App) quotaCall(name string, decode func(interface{}) error) (interface{
 		if err := decode(&p); err != nil {
 			return nil, err
 		}
-		return a.quotaSvc.CompleteLogin(p.ID)
+		snap, err := a.quotaSvc.CompleteLogin(p.ID)
+		if err != nil {
+			return nil, err
+		}
+		a.storeQuotaSnapshot(snap)
+		return snap, nil
 
 	case "quota.saveScreenshot":
 		var p struct {
