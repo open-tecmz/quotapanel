@@ -10,6 +10,8 @@ import (
 // statusBarLeftClick 处理菜单栏 / 托盘图标左键单击：
 // macOS 弹出额度迷你面板（不打开主窗口），其他平台沿用「显示主窗口」。
 func (a *App) statusBarLeftClick() {
+	defer a.guardPanic("statusBarLeftClick")
+
 	if !platform.MiniPanelSupported() {
 		a.showWindow()
 		return
@@ -22,14 +24,16 @@ func (a *App) statusBarLeftClick() {
 		platform.MiniPanelHandlers{OnAction: a.onMiniPanelAction},
 	)
 	// 打开面板时后台刷新一次，保证数据不过期；刷新完成后自动回填面板。
-	go a.refreshQuotas()
+	go a.runGuarded("miniPanel.refresh", a.refreshQuotas)
 }
 
 // onMiniPanelAction 处理迷你面板内的交互（刷新 / 打开界面 / 点击账号）。
 func (a *App) onMiniPanelAction(action string, accountID int) {
+	defer a.guardPanic("onMiniPanelAction")
+
 	switch action {
 	case "refresh":
-		go a.refreshQuotas()
+		go a.runGuarded("miniPanel.refresh", a.refreshQuotas)
 	case "open":
 		a.showWindow()
 		if accountID > 0 && a.ctx != nil {

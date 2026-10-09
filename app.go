@@ -57,6 +57,12 @@ type App struct {
 	// quitting is set when the app exits programmatically (tray menu, restart,
 	// resolved dialog) so onBeforeClose does not block the shutdown.
 	quitting atomic.Bool
+	// rendererBooted is set once the renderer reports its first heartbeat.
+	// Never set while the window is up means the page likely failed to load.
+	rendererBooted atomic.Bool
+	// rendererLastPing is the unix-nano timestamp of the last renderer heartbeat
+	// (0 = never). Used to detect a stalled / white-screen UI at runtime.
+	rendererLastPing atomic.Int64
 }
 
 // NewApp creates a new App application struct
@@ -75,11 +81,10 @@ func NewApp() *App {
 func (a *App) startup(ctx context.Context) {
 	a.ctx = ctx
 
-	// panic 兜底上报
+	// panic 兜底上报（带堆栈）
 	defer func() {
 		if r := recover(); r != nil {
-			msg := fmt.Sprintf("startup panic: %v", r)
-			a.ReportError(msg, "", "startup")
+			a.recordPanic("startup", r)
 			panic(r) // 重新抛出，让 Wails 框架处理
 		}
 	}()
@@ -117,6 +122,10 @@ func (a *App) startup(ctx context.Context) {
 	a.initDatabase()
 	a.quotaSvc.SetBrowserRunner(quota.NewBrowserSessionManager(filepath.Join(a.dataDir, "quota-browser")))
 	go a.pollQuota(ctx)
+
+	// 运行时诊断：渲染进程心跳看门狗（白屏 / 卡死探测）与运行时快照采样。
+	go a.watchRenderer(ctx)
+	go a.sampleMetrics(ctx)
 }
 
 func (a *App) shutdown(ctx context.Context) {
@@ -227,6 +236,9 @@ func (a *App) requestClose() {
 // quit exits directly; hide hides the window and keeps running in background;
 // otherwise the close is prevented and the frontend shows a confirmation dialog.
 func (a *App) onBeforeClose(ctx context.Context) (prevent bool) {
+	// 崩溃兜底：回调内 panic 会直接终止进程，这里捕获并记录，失败时放行关闭。
+	defer a.guardPanic("OnBeforeClose")
+
 	// Programmatic quit / restart must not be intercepted by the close behavior.
 	if a.quitting.Load() {
 		return false
