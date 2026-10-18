@@ -6,6 +6,8 @@ import (
 	"strings"
 
 	"quotapanel/backend/base/db"
+
+	"gorm.io/gorm"
 )
 
 // Service 负责订阅账号的增删改查与额度查询调度。
@@ -77,7 +79,7 @@ func (s *Service) ListAccounts() ([]AccountView, error) {
 		return []AccountView{}, nil
 	}
 	var accounts []Account
-	if err := g.Order("id asc").Find(&accounts).Error; err != nil {
+	if err := g.Order("sort_order asc, id asc").Find(&accounts).Error; err != nil {
 		return nil, err
 	}
 	out := make([]AccountView, 0, len(accounts))
@@ -102,12 +104,41 @@ func (s *Service) AddAccount(provider, name, key, note string) (*AccountView, er
 	if name == "" {
 		name = p.Info().Name
 	}
-	acc := &Account{Provider: provider, Name: name, Key: key, Note: strings.TrimSpace(note)}
+	acc := &Account{Provider: provider, Name: name, Key: key, Note: strings.TrimSpace(note), SortOrder: s.nextSortOrder()}
 	if err := db.DB().Create(acc).Error; err != nil {
 		return nil, err
 	}
 	v := toView(acc)
 	return &v, nil
+}
+
+// nextSortOrder 返回新账号应使用的展示次序（排在现有账号之后）。
+func (s *Service) nextSortOrder() int {
+	g := db.DB()
+	if g == nil {
+		return 1
+	}
+	var maxOrder int
+	if err := g.Model(&Account{}).Select("COALESCE(MAX(sort_order), 0)").Scan(&maxOrder).Error; err != nil {
+		return 1
+	}
+	return maxOrder + 1
+}
+
+// ReorderAccounts 按给定顺序重排账号展示次序（数组下标即新的次序）。
+func (s *Service) ReorderAccounts(ids []uint) error {
+	g := db.DB()
+	if g == nil {
+		return errors.New("数据库不可用")
+	}
+	return g.Transaction(func(tx *gorm.DB) error {
+		for i, id := range ids {
+			if err := tx.Model(&Account{}).Where("id = ?", id).Update("sort_order", i+1).Error; err != nil {
+				return err
+			}
+		}
+		return nil
+	})
 }
 
 // UpdateAccount 更新账号的名称、备注与（可选的）Key。
@@ -191,7 +222,7 @@ func (s *Service) QueryAll() ([]*Snapshot, error) {
 		return []*Snapshot{}, nil
 	}
 	var accounts []Account
-	if err := g.Order("id asc").Find(&accounts).Error; err != nil {
+	if err := g.Order("sort_order asc, id asc").Find(&accounts).Error; err != nil {
 		return nil, err
 	}
 	out := make([]*Snapshot, 0, len(accounts))
@@ -248,6 +279,7 @@ func toView(acc *Account) AccountView {
 		Note:         acc.Note,
 		Key:          acc.Key,
 		KeyMasked:    maskKey(acc.Key),
+		SortOrder:    acc.SortOrder,
 		CreatedAt:    acc.CreatedAt,
 		UpdatedAt:    acc.UpdatedAt,
 	}

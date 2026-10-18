@@ -30,6 +30,8 @@ export const en = {
       deleted: 'Deleted',
       copied: 'Key copied',
       copyFailed: 'Copy failed',
+      reorder: 'Drag to reorder',
+      reordered: 'Order saved',
       screenshotSaved: 'Card screenshot saved',
       loginHint: 'Sign in in the opened window, then select Verify login on the card.',
       loginVerified: 'Login verified; quota refreshed',

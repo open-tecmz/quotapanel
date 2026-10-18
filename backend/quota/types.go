@@ -25,12 +25,14 @@ type ProviderInfo struct {
 
 // Account 是一条已添加的订阅账号（持久化模型）。
 // Key 为订阅凭证（API Key 或登录令牌），Note 为用户备注。
+// SortOrder 为用户自定义展示次序（越小越靠前），1 起递增，0 视为未设置。
 type Account struct {
 	ID        uint      `json:"id" gorm:"primaryKey"`
 	Provider  string    `json:"provider"`
 	Name      string    `json:"name"`
 	Key       string    `json:"key"`
 	Note      string    `json:"note"`
+	SortOrder int       `json:"sortOrder" gorm:"index"`
 	CreatedAt time.Time `json:"createdAt"`
 	UpdatedAt time.Time `json:"updatedAt"`
 }
@@ -44,6 +46,7 @@ type AccountView struct {
 	Note         string    `json:"note"`
 	Key          string    `json:"key"`
 	KeyMasked    string    `json:"keyMasked"`
+	SortOrder    int       `json:"sortOrder"`
 	CreatedAt    time.Time `json:"createdAt"`
 	UpdatedAt    time.Time `json:"updatedAt"`
 }

@@ -35,8 +35,8 @@
       </a-button>
     </div>
 
-    <!-- 卡片列表 -->
-    <div v-else class="account-list">
+    <!-- 卡片列表（按住卡片左上角手柄可拖拽排序） -->
+    <div v-else class="account-list" @dragover.prevent @drop.prevent="onCardDrop">
       <QuotaAccountCard
         v-for="account in accounts"
         :key="account.id"
@@ -44,6 +44,8 @@
         :snapshot="snapshots[account.id]"
         :loading="queryingIds.has(account.id)"
         :browser-mode="providers.some((p) => p.id === account.provider && p.mode === 'browser')"
+        :dragging="draggingId === account.id"
+        :drop-side="dropSideOf(account)"
         @refresh="doQueryAccount(account.id)"
         @edit="doEdit(account)"
         @delete="doDelete(account)"
@@ -52,6 +54,9 @@
         @login="doBeginLogin(account.id)"
         @verify="doCompleteLogin(account.id)"
         @detail="doDetail(account)"
+        @drag-start="onCardDragStart(account)"
+        @drag-over="onCardDragOver(account, $event)"
+        @drag-end="onCardDragEnd"
       />
     </div>
 
@@ -107,10 +112,93 @@ const modalRef = ref<InstanceType<typeof QuotaAccountModal> | null>(null)
 const showDetail = ref(false)
 const detailAccount = ref<QuotaAccount | null>(null)
 
+// ── 卡片拖拽排序 ──────────────────────────────────────────────
+// draggingId：正在拖拽的账号；dropTarget：松手后的落位点；
+// persistedOrder：已持久化的顺序（用于跳过无变化的重排请求）。
+const draggingId = ref<number | null>(null)
+const dropTarget = ref<{ id: number; after: boolean } | null>(null)
+const persistedOrder = ref('')
+let dragEndedAt = 0
+
+function orderKey(list: QuotaAccount[]): string {
+  return list.map((item) => item.id).join(',')
+}
+
+// moveCardTo 把账号 id 移动到目标下标（供拖拽落位与测试复用）。
+function moveCardTo(id: number, toIndex: number): boolean {
+  const fromIndex = accounts.value.findIndex((item) => item.id === id)
+  if (fromIndex < 0) return false
+  const clamped = Math.max(0, Math.min(toIndex, accounts.value.length - 1))
+  if (fromIndex === clamped) return false
+  const next = accounts.value.slice()
+  const [moved] = next.splice(fromIndex, 1)
+  next.splice(clamped, 0, moved)
+  accounts.value = next
+  return true
+}
+
+// persistOrder 把当前顺序写入后端；顺序未变化则不请求。
+async function persistOrder() {
+  const key = orderKey(accounts.value)
+  if (key === persistedOrder.value) return
+  try {
+    await main.Call('quota.reorderAccounts', { ids: accounts.value.map((item) => item.id) })
+    persistedOrder.value = key
+    message.success(t('quota.account.reordered'))
+  } catch (e: unknown) {
+    message.error(e instanceof Error ? e.message : String(e))
+    await loadAccounts()
+  }
+}
+
+function onCardDragStart(account: QuotaAccount) {
+  draggingId.value = account.id
+}
+
+function onCardDragOver(account: QuotaAccount, after: boolean) {
+  if (draggingId.value === null || draggingId.value === account.id) {
+    dropTarget.value = null
+    return
+  }
+  dropTarget.value = { id: account.id, after }
+}
+
+function onCardDragEnd() {
+  draggingId.value = null
+  dropTarget.value = null
+  dragEndedAt = Date.now()
+}
+
+// onCardDrop 在松手时按落位点重排并持久化。
+async function onCardDrop() {
+  const fromId = draggingId.value
+  const target = dropTarget.value
+  if (fromId === null) return
+  if (target && target.id !== fromId) {
+    const fromIndex = accounts.value.findIndex((item) => item.id === fromId)
+    let toIndex = accounts.value.findIndex((item) => item.id === target.id)
+    if (fromIndex >= 0 && toIndex >= 0) {
+      if (target.after) toIndex += 1
+      if (fromIndex < toIndex) toIndex -= 1
+      moveCardTo(fromId, toIndex)
+    }
+  }
+  onCardDragEnd()
+  await persistOrder()
+}
+
+// dropSideOf 返回某张卡片应展示的落位指示方向。
+function dropSideOf(account: QuotaAccount): 'before' | 'after' | null {
+  const target = dropTarget.value
+  if (!target || target.id !== account.id) return null
+  return target.after ? 'after' : 'before'
+}
+
 async function loadAccounts() {
   loadingAccounts.value = true
   try {
     accounts.value = (await main.Call('quota.getAccounts')) || []
+    persistedOrder.value = orderKey(accounts.value)
   } finally {
     loadingAccounts.value = false
   }
@@ -177,6 +265,8 @@ function doEdit(account: QuotaAccount) {
 }
 
 function doDetail(account: QuotaAccount) {
+  // 拖拽结束后浏览器可能补发一次 click，避免误开详情弹窗。
+  if (Date.now() - dragEndedAt < 300) return
   detailAccount.value = account
   showDetail.value = true
 }
@@ -282,6 +372,16 @@ onMounted(() => {
   testActionSet('QuotaAccount.getAccounts', () => accounts.value)
   testActionSet('QuotaAccount.getSnapshots', () => snapshots.value)
   testActionSet('QuotaAccount.getAccountCount', () => accounts.value.length)
+  testActionSet('QuotaAccount.getCardOrder', () =>
+    Array.from(document.querySelectorAll('.quota-card')).map((card) => Number((card as HTMLElement).dataset.accountId))
+  )
+  testActionSet('QuotaAccount.getCardHandleCount', () => document.querySelectorAll('.quota-card .card-handle').length)
+  testActionSet('QuotaAccount.moveCard', async (params: unknown) => {
+    const { id, toIndex } = params as { id: number; toIndex: number }
+    moveCardTo(id, toIndex)
+    await persistOrder()
+    return accounts.value.map((item) => item.id)
+  })
   testActionSet('QuotaAccount.openAddModal', () => {
     doAdd()
     return true
@@ -478,6 +578,9 @@ onUnmounted(() => {
     'QuotaAccount.getAccounts',
     'QuotaAccount.getSnapshots',
     'QuotaAccount.getAccountCount',
+    'QuotaAccount.getCardOrder',
+    'QuotaAccount.getCardHandleCount',
+    'QuotaAccount.moveCard',
     'QuotaAccount.openAddModal',
     'QuotaAccount.fillForm',
     'QuotaAccount.submitForm',

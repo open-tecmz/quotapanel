@@ -134,6 +134,7 @@ export interface QuotaAccount {
   note: string
   key: string
   keyMasked: string
+  sortOrder: number
   createdAt: string
   updatedAt: string
 }
@@ -380,6 +381,7 @@ export interface CallMap {
     ret: QuotaAccount
   }
   'quota.deleteAccount': { args: { id: number }; ret: void }
+  'quota.reorderAccounts': { args: { ids: number[] }; ret: void }
   'quota.queryAccount': { args: { id: number }; ret: QuotaSnapshot }
   'quota.queryAll': { args: void; ret: QuotaSnapshot[] }
   'quota.beginLogin': { args: { id: number }; ret: void }

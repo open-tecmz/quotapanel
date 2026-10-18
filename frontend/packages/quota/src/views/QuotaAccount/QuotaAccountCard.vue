@@ -1,12 +1,31 @@
 <template>
   <div
     class="quota-card group flex flex-col bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow duration-200 cursor-pointer"
+    :class="{
+      'card-dragging': dragging,
+      'card-drop-before': dropSide === 'before',
+      'card-drop-after': dropSide === 'after',
+    }"
     :data-account-id="account.id"
+    draggable="true"
     @click="emit('detail')"
+    @dragstart="onDragStart"
+    @dragover.prevent="onDragOver"
+    @dragend="onDragEnd"
   >
-    <!-- 第一行：图标 + 名称 + 状态 -->
+    <!-- 第一行：拖拽手柄 + 图标 + 名称 + 状态 -->
     <div class="flex items-center justify-between px-3 pt-2.5 pb-1 shrink-0 gap-2">
       <div class="flex items-center gap-2 min-w-0 flex-1">
+        <a-button
+          type="text"
+          class="card-handle shrink-0"
+          :title="t('quota.account.reorder')"
+          @mousedown="dragArmed = true"
+          @mouseup="dragArmed = false"
+          @click.stop
+        >
+          <GripVertical class="w-3.5 h-3.5" aria-hidden="true" />
+        </a-button>
         <div
           class="w-7 h-7 shrink-0 rounded-lg flex items-center justify-center bg-primary-50 border border-primary-100"
         >
@@ -150,7 +169,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import {
   Camera,
@@ -158,6 +177,7 @@ import {
   Clock,
   Copy,
   Globe,
+  GripVertical,
   MoreVertical,
   Pencil,
   RefreshCw,
@@ -183,6 +203,8 @@ const props = defineProps<{
   snapshot?: QuotaSnapshot
   loading: boolean
   browserMode: boolean
+  dragging: boolean
+  dropSide: 'before' | 'after' | null
 }>()
 
 const emit = defineEmits<{
@@ -194,7 +216,32 @@ const emit = defineEmits<{
   login: []
   verify: []
   detail: []
+  dragStart: []
+  dragOver: [after: boolean]
+  dragEnd: []
 }>()
+
+// 仅当用户按下拖拽手柄后才允许开始拖拽，避免误拖卡片或卡片内的按钮。
+const dragArmed = ref(false)
+
+function onDragStart(event: DragEvent) {
+  if (!dragArmed.value) {
+    event.preventDefault()
+    return
+  }
+  emit('dragStart')
+}
+
+// 用指针在卡片上的左右半区判断插入方向，拖拽过程只在松手时落位。
+function onDragOver(event: DragEvent) {
+  const rect = (event.currentTarget as HTMLElement).getBoundingClientRect()
+  emit('dragOver', event.clientX > rect.left + rect.width / 2)
+}
+
+function onDragEnd() {
+  dragArmed.value = false
+  emit('dragEnd')
+}
 
 const updateTimeText = computed(() =>
   props.snapshot?.updatedAt
@@ -260,6 +307,56 @@ function onActionSelect(info: { key: string | number }) {
   min-height: 140px;
   height: auto;
   align-self: stretch;
+  position: relative;
+  /* WebKit（WKWebView）需要显式声明可拖拽区域 */
+  -webkit-user-drag: element;
+}
+
+/* 拖拽进行中：源卡片半透明，明确当前拖动对象 */
+.card-dragging {
+  opacity: 0.5;
+}
+
+/* 落位指示条：拖拽到某张卡片左右半区时提示插入位置 */
+.card-drop-before::before,
+.card-drop-after::after {
+  content: '';
+  position: absolute;
+  top: 6px;
+  bottom: 6px;
+  width: 3px;
+  border-radius: 2px;
+  background: var(--token-primary-600);
+  z-index: 2;
+}
+.card-drop-before::before {
+  left: -7px;
+}
+.card-drop-after::after {
+  right: -7px;
+}
+
+/* 拖拽手柄：默认隐藏，悬停卡片时显示，按住可拖拽排序 */
+.card-handle {
+  opacity: 0;
+  cursor: grab;
+  transition: opacity 0.15s;
+}
+.quota-card:hover .card-handle,
+.card-handle:focus-visible {
+  opacity: 1;
+}
+.card-handle:active {
+  cursor: grabbing;
+}
+/* 按钮本身即 .card-handle，用双类提升优先级覆盖 antd 默认内边距 */
+.quota-card .card-handle {
+  padding: 0 2px;
+  height: 20px;
+  min-width: 16px;
+}
+.card-handle :deep(.anticon) {
+  color: #9ca3af;
 }
 
 .card-details {

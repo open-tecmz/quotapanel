@@ -30,6 +30,8 @@ export const zh = {
       deleted: '已删除',
       copied: 'Key 已复制',
       copyFailed: '复制失败',
+      reorder: '拖拽排序',
+      reordered: '排序已保存',
       screenshotSaved: '卡片截图已保存',
       loginHint: '请在打开的窗口登录，然后点击卡片上的验证登录按钮',
       loginVerified: '登录已验证，额度已刷新',

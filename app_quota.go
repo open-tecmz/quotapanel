@@ -45,6 +45,15 @@ func (a *App) quotaCall(name string, decode func(interface{}) error) (interface{
 		}
 		return a.quotaSvc.UpdateAccount(p.ID, p.Name, p.Key, p.Note)
 
+	case "quota.reorderAccounts":
+		var p struct {
+			IDs []uint `json:"ids"`
+		}
+		if err := decode(&p); err != nil {
+			return nil, err
+		}
+		return nil, a.quotaSvc.ReorderAccounts(p.IDs)
+
 	case "quota.deleteAccount":
 		var p struct {
 			ID uint `json:"id"`
