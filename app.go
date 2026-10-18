@@ -120,6 +120,7 @@ func (a *App) startup(ctx context.Context) {
 	logging.Info("应用启动成功，版本: %s，平台: %s", appConfig.Version, a.autoStartMgr.GetPlatform())
 
 	a.initDatabase()
+	a.seedTestAccounts()
 	a.quotaSvc.SetBrowserRunner(quota.NewBrowserSessionManager(filepath.Join(a.dataDir, "quota-browser")))
 	go a.pollQuota(ctx)
 

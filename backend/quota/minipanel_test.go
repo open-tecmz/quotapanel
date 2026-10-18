@@ -61,6 +61,34 @@ func TestBuildMiniPanelHTMLRendersAccounts(t *testing.T) {
 	}
 }
 
+func TestBuildMiniPanelHTMLNoteFirstLineOnly(t *testing.T) {
+	accounts := []AccountView{
+		{ID: 1, Provider: "opencode", ProviderName: "OpenCode", Name: "多行备注", Note: "备注第一行\n备注第二行"},
+	}
+	html := BuildMiniPanelHTML(accounts, nil, "zh")
+	if !strings.Contains(html, "备注第一行 · OpenCode") {
+		t.Errorf("迷你面板应展示备注首行")
+	}
+	if strings.Contains(html, "备注第二行") {
+		t.Error("迷你面板不应展示备注的后续行")
+	}
+}
+
+func TestFirstLine(t *testing.T) {
+	cases := map[string]string{
+		"":           "",
+		"单行备注":       "单行备注",
+		"第一行\n第二行":   "第一行",
+		"第一行\r\n第二行": "第一行",
+		"  首行  \n次行": "首行",
+	}
+	for in, want := range cases {
+		if got := firstLine(in); got != want {
+			t.Errorf("firstLine(%q) = %q, want %q", in, got, want)
+		}
+	}
+}
+
 func TestBuildMiniPanelHTMLProgressClass(t *testing.T) {
 	html := BuildMiniPanelHTML(testAccounts(), testSnaps(), "zh")
 	if !strings.Contains(html, `class="fill warning" style="width:88.0%"`) {

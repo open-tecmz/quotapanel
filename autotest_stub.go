@@ -7,3 +7,6 @@ func parseAutoTestPort() int { return 0 }
 
 // startAutoTestServer 非测试构建时为空操作。
 func (a *App) startAutoTestServer(port int) {}
+
+// seedTestAccounts 非测试构建时为空操作（不写入任何示例数据）。
+func (a *App) seedTestAccounts() {}

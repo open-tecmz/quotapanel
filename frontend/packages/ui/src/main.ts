@@ -79,7 +79,12 @@ window.addEventListener('unhandledrejection', (event) => {
 // Global error handler for uncaught errors
 window.addEventListener('error', (event) => {
   const stack = event.error instanceof Error ? event.error.stack : undefined
-  backendDiag('error', `Uncaught Error: ${event.message}`, { stack, src: event.filename, line: event.lineno, col: event.colno })
+  backendDiag('error', `Uncaught Error: ${event.message}`, {
+    stack,
+    src: event.filename,
+    line: event.lineno,
+    col: event.colno,
+  })
   trackError(`Uncaught Error: ${event.message}`)
   reportError({
     msg: `Uncaught Error: ${event.message}`,

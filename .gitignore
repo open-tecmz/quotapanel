@@ -33,4 +33,6 @@ Thumbs.db
 
 # Agent symlinks
 /.agents
+/.wrpub
+/.awesomex
 /AGENTS.md

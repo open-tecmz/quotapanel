@@ -1,37 +1,44 @@
 [
   {
     "title": "额度主页",
-    "url": "https://open-cdn.tecmz.com/theme/apps/quotapanel/images/account.png?t=202609261508",
+    "url": "https://open-cdn.tecmz.com/theme/apps/quotapanel/images/account.png?t=202610181839",
     "name": "account.png",
-    "urlTrans": "https://open-cdn.tecmz.com/theme/apps/quotapanel/images/account.trans.png?t=202609261508",
+    "urlTrans": "https://open-cdn.tecmz.com/theme/apps/quotapanel/images/account.trans.png?t=202610181839",
     "nameTrans": "account.trans.png"
   },
   {
     "title": "新增账号弹窗",
-    "url": "https://open-cdn.tecmz.com/theme/apps/quotapanel/images/account-add.png?t=202609261508",
+    "url": "https://open-cdn.tecmz.com/theme/apps/quotapanel/images/account-add.png?t=202610181838",
     "name": "account-add.png",
-    "urlTrans": "https://open-cdn.tecmz.com/theme/apps/quotapanel/images/account-add.trans.png?t=202609261508",
+    "urlTrans": "https://open-cdn.tecmz.com/theme/apps/quotapanel/images/account-add.trans.png?t=202610181839",
     "nameTrans": "account-add.trans.png"
   },
   {
     "title": "账号卡片",
-    "url": "https://open-cdn.tecmz.com/theme/apps/quotapanel/images/account-card.png?t=202609261508",
+    "url": "https://open-cdn.tecmz.com/theme/apps/quotapanel/images/account-card.png?t=202610181838",
     "name": "account-card.png",
-    "urlTrans": "https://open-cdn.tecmz.com/theme/apps/quotapanel/images/account-card.trans.png?t=202609261508",
+    "urlTrans": "https://open-cdn.tecmz.com/theme/apps/quotapanel/images/account-card.trans.png?t=202610181839",
     "nameTrans": "account-card.trans.png"
   },
   {
+    "title": "账号详情弹窗",
+    "url": "https://open-cdn.tecmz.com/theme/apps/quotapanel/images/account-detail.png?t=202610181844",
+    "name": "account-detail.png",
+    "urlTrans": "https://open-cdn.tecmz.com/theme/apps/quotapanel/images/account-detail.trans.png?t=202610181844",
+    "nameTrans": "account-detail.trans.png"
+  },
+  {
     "title": "额度主页（深色）",
-    "url": "https://open-cdn.tecmz.com/theme/apps/quotapanel/images/account-dark.png?t=202609261508",
+    "url": "https://open-cdn.tecmz.com/theme/apps/quotapanel/images/account-dark.png?t=202610181839",
     "name": "account-dark.png",
-    "urlTrans": "https://open-cdn.tecmz.com/theme/apps/quotapanel/images/account-dark.trans.png?t=202609261508",
+    "urlTrans": "https://open-cdn.tecmz.com/theme/apps/quotapanel/images/account-dark.trans.png?t=202610181839",
     "nameTrans": "account-dark.trans.png"
   },
   {
     "title": "设置页",
-    "url": "https://open-cdn.tecmz.com/theme/apps/quotapanel/images/setting.png?t=202609261508",
+    "url": "https://open-cdn.tecmz.com/theme/apps/quotapanel/images/setting.png?t=202610181839",
     "name": "setting.png",
-    "urlTrans": "https://open-cdn.tecmz.com/theme/apps/quotapanel/images/setting.trans.png?t=202609261508",
+    "urlTrans": "https://open-cdn.tecmz.com/theme/apps/quotapanel/images/setting.trans.png?t=202610181839",
     "nameTrans": "setting.trans.png"
   }
 ]

@@ -277,6 +277,7 @@ onMounted(() => {
     doOpenAccountFromMini(id)
   })
   testActionSet('QuotaAccount.isLoading', () => loadingAccounts.value)
+  testActionSet('QuotaAccount.isQueryingAll', () => queryingAll.value)
   testActionSet('QuotaAccount.getProviders', () => providers.value)
   testActionSet('QuotaAccount.getAccounts', () => accounts.value)
   testActionSet('QuotaAccount.getSnapshots', () => snapshots.value)
@@ -442,6 +443,18 @@ onMounted(() => {
     await nextTick()
     return true
   })
+  testActionSet('account-detail.prepare', async () => {
+    await prepareAccountPage()
+    const first = accounts.value[0]
+    if (first) doDetail(first)
+    await nextTick()
+    return true
+  })
+  testActionSet('account-detail.cleanup', async () => {
+    showDetail.value = false
+    await nextTick()
+    return true
+  })
   testActionSet('account-dark.prepare', async () => {
     await prepareAccountPage()
     appStore.setTheme(true)
@@ -460,6 +473,7 @@ onUnmounted(() => {
   EventsOff('mini:openAccount')
   testActionUnset([
     'QuotaAccount.isLoading',
+    'QuotaAccount.isQueryingAll',
     'QuotaAccount.getProviders',
     'QuotaAccount.getAccounts',
     'QuotaAccount.getSnapshots',
@@ -488,6 +502,8 @@ onUnmounted(() => {
     'account-add.cleanup',
     'account-card.prepare',
     'account-card.cleanup',
+    'account-detail.prepare',
+    'account-detail.cleanup',
     'account-dark.prepare',
     'account-dark.cleanup',
   ])

@@ -16,8 +16,8 @@
           <div class="text-[13px] font-semibold text-gray-900 truncate">
             {{ account.name }}
           </div>
-          <div class="text-[11px] text-gray-400 truncate">
-            {{ account.providerName }}
+          <div class="card-subtitle text-[11px] text-gray-400 truncate">
+            {{ subtitle }}
           </div>
         </div>
       </div>
@@ -26,7 +26,7 @@
 
     <!-- 中间行：备注 / Key（紧凑单行） -->
     <div class="px-3 pb-1 flex items-center gap-1 text-[11px] text-gray-400 min-w-0">
-      <span v-if="account.note" class="truncate" :title="account.note">{{ account.note }}</span>
+      <span v-if="account.note" class="card-note truncate" :title="account.note">{{ noteFirstLine }}</span>
       <span v-if="account.note && !browserMode" class="shrink-0 text-gray-300">·</span>
       <span v-if="!browserMode" class="font-mono truncate" :title="account.keyMasked">{{ account.keyMasked }}</span>
       <a-button v-if="!browserMode" type="text" :title="t('quota.account.copy')" @click.stop="emit('copy')">
@@ -43,7 +43,6 @@
         {{ snapshot.error }}
       </div>
       <template v-else-if="snapshot">
-        <div v-if="snapshot.plan" class="text-[11px] text-gray-500 mb-1 truncate">{{ snapshot.plan }}</div>
         <div v-if="visibleWindows.length" class="window-grid">
           <template v-for="w in visibleWindows" :key="w.key">
             <span class="window-label" :title="w.label">{{ w.label }}</span>
@@ -57,14 +56,15 @@
             <span class="window-value" :title="w.detail || `${w.percent.toFixed(0)}%`">
               {{ w.detail || `${w.percent.toFixed(0)}%` }}
             </span>
-            <div
+            <span
               v-if="hasResetTime(w.resetAt)"
               class="window-reset"
               :title="`${t('quota.account.resetAt')}：${w.resetAt}`"
             >
-              <CalendarClock class="w-3 h-3 shrink-0" aria-hidden="true" />
-              <span class="window-reset-text">{{ t('quota.account.resetAt') }} {{ w.resetAt }}</span>
-            </div>
+              <RotateCcw class="w-3 h-3 shrink-0" aria-hidden="true" />
+              <span class="window-reset-text">{{ w.resetAt }}</span>
+            </span>
+            <span v-else class="window-reset-empty" aria-hidden="true" />
           </template>
           <div v-if="hiddenWindowCount" class="window-more">
             {{ t('quota.account.moreWindows', { count: hiddenWindowCount }) }}
@@ -153,7 +153,6 @@
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import {
-  CalendarClock,
   Camera,
   CircleCheck,
   Clock,
@@ -162,11 +161,20 @@ import {
   MoreVertical,
   Pencil,
   RefreshCw,
+  RotateCcw,
   Trash2,
   Wallet,
 } from 'lucide-vue-next'
 import type { QuotaAccount, QuotaSnapshot } from '../../api/main'
-import { formatDateTime, hasResetTime, statusColor, statusTagColor, statusTextKey } from '../../utils/format'
+import {
+  aggregateStatus,
+  firstLine,
+  formatDateTime,
+  hasResetTime,
+  statusColor,
+  statusTagColor,
+  statusTextKey,
+} from '../../utils/format'
 
 const { t } = useI18n()
 
@@ -196,6 +204,17 @@ const updateTimeText = computed(() =>
 
 const updateTimeValue = computed(() => formatDateTime(props.snapshot?.updatedAt || props.account.updatedAt))
 
+// 卡片只展示备注首行，完整备注在详情弹窗中查看。
+const noteFirstLine = computed(() => firstLine(props.account.note))
+
+// 供应商与套餐同名时只显示一次，避免卡片内出现重复文本。
+const subtitle = computed(() => {
+  const provider = props.account.providerName?.trim() || ''
+  const plan = props.snapshot?.plan?.trim() || ''
+  if (!plan || plan === provider) return provider
+  return `${provider} · ${plan}`
+})
+
 // 卡片保持紧凑：额度窗口最多展示 3 条，其余进入详情弹窗
 const MAX_WINDOWS = 3
 const visibleWindows = computed(() => (props.snapshot?.windows || []).slice(0, MAX_WINDOWS))
@@ -214,7 +233,7 @@ const hiddenStatCount = computed(() => {
 
 const currentStatus = computed(() => {
   if (props.snapshot?.error) return 'exceeded'
-  return props.snapshot?.status
+  return aggregateStatus(props.snapshot?.status, props.snapshot?.windows)
 })
 
 const tagColor = computed(() => statusTagColor(currentStatus.value))
@@ -260,7 +279,7 @@ function onActionSelect(info: { key: string | number }) {
 /* 额度窗口使用网格对齐：标签列与数值列自适应同一宽度，进度条左右边界对齐，文字不换行不截断 */
 .window-grid {
   display: grid;
-  grid-template-columns: minmax(0, auto) minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, auto) minmax(0, 1fr) auto auto;
   column-gap: 8px;
   row-gap: 4px;
   align-items: center;
@@ -289,16 +308,16 @@ function onActionSelect(info: { key: string | number }) {
   font-variant-numeric: tabular-nums;
 }
 
+/* 重置时间与进度条同行展示，仅保留图标 + 时间，完整文案在 title 中 */
 .window-reset {
-  grid-column: 1 / -1;
   display: flex;
   align-items: center;
   gap: 3px;
   min-width: 0;
-  margin-top: -2px;
   font-size: 10px;
   line-height: 1.3;
   color: #9ca3af;
+  white-space: nowrap;
 }
 
 .window-reset-text {
@@ -306,6 +325,7 @@ function onActionSelect(info: { key: string | number }) {
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
+  font-variant-numeric: tabular-nums;
 }
 
 .window-more {

@@ -9,6 +9,13 @@ export function formatDateTime(v: string | null | undefined): string {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`
 }
 
+// 取多行文本的首行：卡片列表只展示备注首行，完整内容在详情弹窗中查看。
+export function firstLine(v: string | null | undefined): string {
+  const text = (v ?? '').trim()
+  const index = text.search(/\r?\n/)
+  return index < 0 ? text : text.slice(0, index).trim()
+}
+
 // 按状态返回进度条颜色。
 export function statusColor(status: string | undefined): string {
   switch (status) {
@@ -57,6 +64,22 @@ export function statusTagColor(status: string | undefined): string {
     default:
       return 'default'
   }
+}
+
+const STATUS_SEVERITY: Record<string, number> = { exceeded: 3, warning: 2, ok: 1, active: 1 }
+
+// 汇总快照状态与各额度窗口状态，取最严重的一个，使状态标签与进度条口径一致。
+export function aggregateStatus(status: string | undefined, windows: { status?: string }[] = []): string | undefined {
+  let worst = status
+  let severity = STATUS_SEVERITY[status ?? ''] ?? 0
+  for (const w of windows) {
+    const value = STATUS_SEVERITY[w.status ?? ''] ?? 0
+    if (value > severity) {
+      severity = value
+      worst = w.status
+    }
+  }
+  return worst
 }
 
 // 按状态返回 i18n 文案 key（quota.account.statusXxx），供卡片与详情弹窗复用。

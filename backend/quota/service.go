@@ -11,6 +11,9 @@ import (
 // Service 负责订阅账号的增删改查与额度查询调度。
 type Service struct {
 	browser BrowserRunner
+	// demoAccounts 保存示例账号 ID，自动全量查询时跳过，
+	// 避免用示例凭证向真实接口发起请求（也避免启动无头浏览器）。
+	demoAccounts map[uint]struct{}
 }
 
 // NewService 创建额度模块 Service。
@@ -21,6 +24,40 @@ func NewService() *Service {
 // SetBrowserRunner 注入浏览器查询能力，供 ModeBrowser 的 provider 使用。
 func (s *Service) SetBrowserRunner(r BrowserRunner) {
 	s.browser = r
+}
+
+// SetDemoAccounts 标记示例账号，它们不参与自动全量查询。
+func (s *Service) SetDemoAccounts(ids []uint) {
+	if len(ids) == 0 {
+		s.demoAccounts = nil
+		return
+	}
+	set := make(map[uint]struct{}, len(ids))
+	for _, id := range ids {
+		set[id] = struct{}{}
+	}
+	s.demoAccounts = set
+}
+
+// sessionReporter 由浏览器会话管理器实现，用于判断账号是否有可复用的登录会话。
+type sessionReporter interface{ HasSession(id uint) bool }
+
+// canAutoQuery 判断账号是否应参与自动全量查询：
+// 示例账号与「尚未登录的浏览器类账号」都跳过——前者凭证无效，
+// 后者查不出结果且会启动无头浏览器；单账号显式查询不受此限制。
+func (s *Service) canAutoQuery(acc *Account) bool {
+	if _, demo := s.demoAccounts[acc.ID]; demo {
+		return false
+	}
+	if p, ok := GetProvider(acc.Provider); ok && p.Info().Mode == ModeBrowser {
+		if s.browser == nil {
+			return false
+		}
+		if r, ok := s.browser.(sessionReporter); ok && !r.HasSession(acc.ID) {
+			return false
+		}
+	}
+	return true
 }
 
 // ListProviders 返回全部已注册供应商的元信息。
@@ -159,6 +196,9 @@ func (s *Service) QueryAll() ([]*Snapshot, error) {
 	}
 	out := make([]*Snapshot, 0, len(accounts))
 	for i := range accounts {
+		if !s.canAutoQuery(&accounts[i]) {
+			continue
+		}
 		snap, err := s.query(&accounts[i])
 		if err != nil {
 			snap = &Snapshot{

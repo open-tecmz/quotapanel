@@ -146,8 +146,8 @@ func BuildMiniPanelHTML(accounts []AccountView, snaps map[uint]*Snapshot, locale
 
 func miniPanelItemViewFor(acc AccountView, snap *Snapshot, tx miniTexts) miniPanelItemView {
 	meta := acc.ProviderName
-	if acc.Note != "" {
-		meta = acc.Note + " · " + meta
+	if note := firstLine(acc.Note); note != "" {
+		meta = note + " · " + meta
 	}
 	item := miniPanelItemView{
 		ID:    acc.ID,
@@ -186,6 +186,15 @@ func miniPanelItemViewFor(acc AccountView, snap *Snapshot, tx miniTexts) miniPan
 		item.More = fmt.Sprintf(tx.More, extra)
 	}
 	return item
+}
+
+// firstLine 返回多行文本的首行，迷你面板只展示备注首行，完整备注在详情弹窗中查看。
+func firstLine(v string) string {
+	text := strings.TrimSpace(v)
+	if index := strings.IndexAny(text, "\r\n"); index >= 0 {
+		return strings.TrimSpace(text[:index])
+	}
+	return text
 }
 
 func miniWindowViewFor(w Window) miniPanelWindowView {

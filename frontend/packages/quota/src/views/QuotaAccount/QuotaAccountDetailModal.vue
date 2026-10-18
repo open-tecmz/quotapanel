@@ -3,25 +3,25 @@
     :open="open"
     :title="account?.name || t('quota.account.detailTitle')"
     width="min(720px, 90vw)"
+    wrap-class-name="quota-detail-modal"
     @cancel="handleCancel"
   >
     <div v-if="account" class="quota-detail">
-      <!-- 概览：供应商 / 套餐 / 状态 / 账号 -->
+      <!-- 概览：供应商 · 套餐 / 状态 / 账号 -->
       <div class="detail-head">
         <div class="flex items-center justify-between gap-3 min-w-0">
-          <div class="min-w-0">
-            <div class="text-[13px] font-semibold text-gray-900 truncate">{{ account.name }}</div>
-            <div class="text-[11px] text-gray-400 truncate mt-0.5">
-              {{ account.providerName }}
-              <template v-if="snapshot?.plan"> · {{ snapshot.plan }}</template>
-            </div>
-          </div>
+          <div class="text-[13px] font-semibold text-gray-900 truncate min-w-0">{{ subtitle }}</div>
           <a-tag :color="tagColor" class="!mr-0 shrink-0">{{ tagLabel }}</a-tag>
         </div>
-        <div v-if="snapshot?.accountName" class="text-[11px] text-gray-500 truncate mt-1">
+        <div
+          v-if="snapshot?.accountName && snapshot.accountName !== account.name"
+          class="text-[11px] text-gray-500 truncate mt-1"
+        >
           {{ snapshot.accountName }}
         </div>
-        <div v-if="account.note" class="text-[11px] text-gray-500 truncate mt-1">{{ account.note }}</div>
+        <div v-if="account.note" class="detail-note text-[11px] text-gray-500 whitespace-pre-line break-words mt-1">
+          {{ account.note }}
+        </div>
         <div v-if="account.keyMasked" class="font-mono text-[11px] text-gray-400 truncate mt-1">
           {{ account.keyMasked }}
         </div>
@@ -36,11 +36,21 @@
             <Gauge class="w-3.5 h-3.5 text-primary-500" aria-hidden="true" />
             {{ t('quota.account.windows') }}
           </div>
-          <div class="space-y-3">
+          <div class="detail-windows">
             <div v-for="w in snapshot.windows" :key="w.key" class="detail-window">
               <div class="flex items-center justify-between gap-2">
                 <span class="text-xs text-gray-600 truncate">{{ w.label }}</span>
-                <span class="text-xs text-gray-500 shrink-0">{{ w.detail || `${w.percent.toFixed(0)}%` }}</span>
+                <span class="flex items-center gap-2 shrink-0">
+                  <span
+                    v-if="hasResetTime(w.resetAt)"
+                    class="detail-reset"
+                    :title="`${t('quota.account.resetAt')}：${w.resetAt}`"
+                  >
+                    <RotateCcw class="w-3 h-3 shrink-0" aria-hidden="true" />
+                    <span class="detail-reset-text">{{ w.resetAt }}</span>
+                  </span>
+                  <span class="text-xs text-gray-500">{{ w.detail || `${w.percent.toFixed(0)}%` }}</span>
+                </span>
               </div>
               <a-progress
                 :percent="Math.min(100, Math.round(w.percent))"
@@ -48,9 +58,6 @@
                 :show-info="false"
                 size="small"
               />
-              <div v-if="hasResetTime(w.resetAt)" class="text-[11px] text-gray-400 truncate mt-0.5">
-                {{ t('quota.account.resetAt') }}：{{ w.resetAt }}
-              </div>
             </div>
           </div>
         </section>
@@ -115,9 +122,16 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { BarChart3, Coins, Gauge } from 'lucide-vue-next'
+import { BarChart3, Coins, Gauge, RotateCcw } from 'lucide-vue-next'
 import type { QuotaAccount, QuotaSnapshot } from '../../api/main'
-import { formatDateTime, hasResetTime, statusColor, statusTagColor, statusTextKey } from '../../utils/format'
+import {
+  aggregateStatus,
+  formatDateTime,
+  hasResetTime,
+  statusColor,
+  statusTagColor,
+  statusTextKey,
+} from '../../utils/format'
 
 const { t } = useI18n()
 
@@ -143,9 +157,17 @@ const updateTimeText = computed(() => {
   return '-'
 })
 
+// 标题已展示账号名，头部只显示「供应商 · 套餐」（同名时去重），避免重复。
+const subtitle = computed(() => {
+  const provider = props.account?.providerName?.trim() || ''
+  const plan = props.snapshot?.plan?.trim() || ''
+  const merged = !plan || plan === provider ? provider : `${provider} · ${plan}`
+  return merged || props.account?.name || ''
+})
+
 const currentStatus = computed(() => {
   if (props.snapshot?.error) return 'exceeded'
-  return props.snapshot?.status
+  return aggregateStatus(props.snapshot?.status, props.snapshot?.windows)
 })
 
 const tagColor = computed(() => statusTagColor(currentStatus.value))
@@ -185,6 +207,35 @@ function progressColor(status: string): string {
 
 .detail-section {
   margin-top: 16px;
+}
+
+/* 额度窗口两列排布，宽屏下更紧凑，避免单列进度条过长 */
+.detail-windows {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 12px 24px;
+}
+
+.detail-window {
+  min-width: 0;
+}
+
+/* 重置时间与窗口标签同行展示，仅保留图标 + 时间，完整文案在 title 中 */
+.detail-reset {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  min-width: 0;
+  font-size: 10px;
+  color: #9ca3af;
+}
+
+.detail-reset-text {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-variant-numeric: tabular-nums;
 }
 
 .section-title {

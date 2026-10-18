@@ -128,6 +128,12 @@ func (m *BrowserSessionManager) profile(id uint) string {
 	return filepath.Join(m.root, strconv.FormatUint(uint64(id), 10))
 }
 
+// HasSession 报告该账号是否已有可复用的登录会话（已保存过 Cookie）。
+// 未登录的浏览器类账号无需（也无法）查询额度，自动全量查询会据此跳过。
+func (m *BrowserSessionManager) HasSession(id uint) bool {
+	return len(loadProfileCookies(m.profile(id))) > 0
+}
+
 func browserExecutable() (string, error) {
 	var candidates []string
 	switch runtime.GOOS {

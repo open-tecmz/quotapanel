@@ -1,6 +1,6 @@
 import { designTokens } from '@quotapanel/ui/src/theme/tokens'
 import type { QuotaAccount, QuotaSnapshot } from '../api/main'
-import { formatDateTime, hasResetTime, statusColor, statusLabel } from './format'
+import { firstLine, formatDateTime, hasResetTime, statusColor, statusLabel, aggregateStatus } from './format'
 
 // 用 Canvas 绘制完整卡片内容，避免 WebKit 对 HTML foreignObject 截图的限制。
 export function renderCardScreenshot(
@@ -13,10 +13,7 @@ export function renderCardScreenshot(
   const contentHeight = snapshot?.error
     ? 42
     : snapshot
-      ? (snapshot.plan ? 20 : 0) +
-        (snapshot.windows?.length || 0) * 39 +
-        stats.length * 20 +
-        (snapshot.summary ? 18 : 0)
+      ? (snapshot.windows?.length || 0) * 39 + stats.length * 20 + (snapshot.summary ? 18 : 0)
       : 24
   const footerTop = Math.max(278, 124 + contentHeight + 12)
   const height = footerTop + 42
@@ -60,7 +57,10 @@ export function renderCardScreenshot(
   box(16, 16, 38, 38, 10, '#f0f9f9', '#dbf5f5')
   line('Q', 28, 35, 20, 18, color.green, 'bold')
   line(account.name, 66, 29, 340, 16, color.dark, '600')
-  line(account.providerName, 66, 48, 340, 11, color.light)
+  const provider = account.providerName?.trim() || ''
+  const plan = snapshot?.plan?.trim() || ''
+  line(!plan || plan === provider ? provider : `${provider} · ${plan}`, 66, 48, 340, 11, color.light)
+  const snapStatus = aggregateStatus(snapshot?.error ? 'exceeded' : snapshot?.status, snapshot?.windows || [])
   const label = snapshot
     ? locale === 'en'
       ? (
@@ -68,15 +68,15 @@ export function renderCardScreenshot(
             string,
             string
           >
-        )[snapshot.error ? 'exceeded' : snapshot.status] || 'Unknown'
-      : statusLabel(snapshot.error ? 'exceeded' : snapshot.status)
+        )[snapStatus ?? ''] || 'Unknown'
+      : statusLabel(snapStatus)
     : locale === 'en'
       ? 'Not checked'
       : '未查询'
   box(456, 22, 86, 26, 13, snapshot?.error ? '#fef2f2' : '#f0f9f9')
   line(label, 478, 35, 60, 12, snapshot?.error ? '#dc2626' : color.green)
 
-  if (account.note) line(account.note, 66, 71, 460, 11)
+  if (account.note) line(firstLine(account.note), 66, 71, 460, 11)
   line(account.keyMasked, 66, account.note ? 89 : 76, 460, 11, color.light)
   ctx.strokeStyle = '#f3f4f6'
   ctx.beginPath()
@@ -89,10 +89,6 @@ export function renderCardScreenshot(
     box(16, y - 10, 528, 42, 8, '#fef2f2')
     line(snapshot.error, 26, y + 10, 504, 12, '#dc2626')
   } else if (snapshot) {
-    if (snapshot.plan) {
-      line(snapshot.plan, 16, y, 528, 12, color.gray, '600')
-      y += 20
-    }
     for (const window of snapshot.windows || []) {
       line(window.label, 16, y, 250, 11)
       line(window.detail || `${Math.round(window.percent)}%`, 362, y, 180, 11)
