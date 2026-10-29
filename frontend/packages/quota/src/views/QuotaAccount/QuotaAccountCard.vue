@@ -141,10 +141,10 @@
             </a-button>
             <template #overlay>
               <a-menu @click="onActionSelect">
-                <a-menu-item key="screenshot">
+                <a-menu-item key="share">
                   <span class="inline-flex items-center gap-2">
-                    <Camera class="w-4 h-4" aria-hidden="true" />
-                    {{ t('quota.account.screenshot') }}
+                    <Share2 class="w-4 h-4" aria-hidden="true" />
+                    {{ t('quota.account.share') }}
                   </span>
                 </a-menu-item>
                 <a-menu-item key="edit">
@@ -172,7 +172,6 @@
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import {
-  Camera,
   CircleCheck,
   Clock,
   Copy,
@@ -182,6 +181,7 @@ import {
   Pencil,
   RefreshCw,
   RotateCcw,
+  Share2,
   Trash2,
   Wallet,
 } from 'lucide-vue-next'
@@ -212,7 +212,7 @@ const emit = defineEmits<{
   edit: []
   delete: []
   copy: []
-  screenshot: []
+  share: []
   login: []
   verify: []
   detail: []
@@ -296,7 +296,7 @@ function progressColor(status: string): string {
 
 function onActionSelect(info: { key: string | number }) {
   const key = String(info.key)
-  if (key === 'screenshot') emit('screenshot')
+  if (key === 'share') emit('share')
   else if (key === 'edit') emit('edit')
   else if (key === 'delete') emit('delete')
 }

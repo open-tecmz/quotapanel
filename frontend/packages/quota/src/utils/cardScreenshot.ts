@@ -468,8 +468,7 @@ export function renderShareImage(
   const includeNote = options.includeNote === true
   const website = displayWebsite(options.website)
 
-  // 只有一个账号时用单列宽卡居中，避免两侧留白过多。
-  const columnWidth = accounts.length === 1 ? 520 : (width - padding * 2 - gap) / 2
+  const columnWidth = (width - padding * 2 - gap) / 2
   const rows: QuotaAccount[][] = []
   for (let index = 0; index < accounts.length; index += 2) {
     rows.push(accounts.slice(index, index + 2))
@@ -512,8 +511,7 @@ export function renderShareImage(
   let y = gridTop
   rows.forEach((row, rowIndex) => {
     const rowHeight = rowHeights[rowIndex]
-    const rowWidth = row.length * columnWidth + (row.length - 1) * gap
-    let x = row.length === 1 ? (width - rowWidth) / 2 : padding
+    let x = padding
     for (const account of row) {
       drawLongCard(ctx, account, snapshots[account.id], x, y, columnWidth, rowHeight, locale, includeNote)
       x += columnWidth + gap
