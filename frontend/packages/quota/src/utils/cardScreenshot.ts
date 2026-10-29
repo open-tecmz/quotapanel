@@ -1,6 +1,7 @@
 import { designTokens } from '@quotapanel/ui/src/theme/tokens'
 import type { QuotaAccount, QuotaSnapshot } from '../api/main'
 import { firstLine, formatDateTime, hasResetTime, statusColor, statusLabel, aggregateStatus } from './format'
+import { drawBrandLogo } from './brandLogo'
 
 type Locale = 'zh' | 'en'
 
@@ -147,11 +148,7 @@ function drawPaperBackground(ctx: CanvasRenderingContext2D, width: number, heigh
 }
 
 function drawBrandMark(ctx: CanvasRenderingContext2D, x: number, y: number, size: number) {
-  const gradient = ctx.createLinearGradient(x, y, x + size, y + size)
-  gradient.addColorStop(0, designTokens.color.primaryDark)
-  gradient.addColorStop(0.72, designTokens.color.primary)
-  fillRound(ctx, x, y, size, size, size * 0.3, gradient)
-  text(ctx, 'Q', x + size / 2, y + size / 2 + 0.5, size, size * 0.56, '#ffffff', 800, 'center')
+  drawBrandLogo(ctx, x, y, size, palette.primary)
 }
 
 function displayWebsite(website?: string): string {
@@ -564,7 +561,7 @@ export function renderCardScreenshot(
 
   fillRound(ctx, 16, 16, 38, 38, 10, palette.primarySoft)
   strokeRound(ctx, 16, 16, 38, 38, 10, palette.primaryBorder)
-  text(ctx, 'Q', 35, 35.5, 24, 18, palette.primaryHover, 800, 'center')
+  drawBrandLogo(ctx, 21, 21, 28, palette.primary)
 
   text(ctx, account.name, 66, 29, cardWidth - 190, 16, palette.text, 600)
   const provider = account.providerName?.trim() || ''
