@@ -387,6 +387,10 @@ export interface CallMap {
   'quota.beginLogin': { args: { id: number }; ret: void }
   'quota.completeLogin': { args: { id: number }; ret: QuotaSnapshot }
   'quota.saveScreenshot': { args: { accountId: number; pngBase64: string }; ret: boolean }
+  'quota.saveImage': {
+    args: { title: string; defaultName: string; pngBase64: string }
+    ret: boolean
+  }
 }
 
 // ─── 统一调用入口 ───

@@ -4,11 +4,28 @@ import (
 	"encoding/base64"
 	"fmt"
 	"os"
+	"path/filepath"
+	"strings"
 
 	"quotapanel/backend/base/platform"
 
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
+
+// decodePNGBase64 校验并解码前端 Canvas 导出的 PNG。
+func decodePNGBase64(value string) ([]byte, error) {
+	if len(value) > 14<<20 {
+		return nil, fmt.Errorf("截图过大")
+	}
+	data, err := base64.StdEncoding.DecodeString(value)
+	if err != nil {
+		return nil, fmt.Errorf("截图数据无效: %w", err)
+	}
+	if len(data) < 8 || string(data[:8]) != "\x89PNG\r\n\x1a\n" {
+		return nil, fmt.Errorf("仅支持 PNG 截图")
+	}
+	return data, nil
+}
 
 // quotaCall 处理 quota.* 命名空间的所有 Call 请求。
 // 由 app_call.go 的 Call 方法路由过来。
@@ -117,18 +134,45 @@ func (a *App) quotaCall(name string, decode func(interface{}) error) (interface{
 		if err := decode(&p); err != nil {
 			return nil, err
 		}
-		if len(p.PNGBase64) > 14<<20 {
-			return nil, fmt.Errorf("截图过大")
-		}
-		data, err := base64.StdEncoding.DecodeString(p.PNGBase64)
+		data, err := decodePNGBase64(p.PNGBase64)
 		if err != nil {
-			return nil, fmt.Errorf("截图数据无效: %w", err)
-		}
-		if len(data) < 8 || string(data[:8]) != "\x89PNG\r\n\x1a\n" {
-			return nil, fmt.Errorf("仅支持 PNG 截图")
+			return nil, err
 		}
 		filename := fmt.Sprintf("quota-card-%d.png", p.AccountID)
 		path, err := runtime.SaveFileDialog(a.ctx, runtime.SaveDialogOptions{Title: "保存卡片截图", DefaultFilename: filename, Filters: []runtime.FileFilter{{DisplayName: "PNG 图片", Pattern: "*.png"}}})
+		if err != nil {
+			return nil, err
+		}
+		if path == "" {
+			return false, nil
+		}
+		return true, os.WriteFile(path, data, 0644)
+
+	case "quota.saveImage":
+		var p struct {
+			Title       string `json:"title"`
+			DefaultName string `json:"defaultName"`
+			PNGBase64   string `json:"pngBase64"`
+		}
+		if err := decode(&p); err != nil {
+			return nil, err
+		}
+		data, err := decodePNGBase64(p.PNGBase64)
+		if err != nil {
+			return nil, err
+		}
+		title := strings.TrimSpace(p.Title)
+		if title == "" {
+			title = "保存图片"
+		}
+		filename := filepath.Base(strings.TrimSpace(p.DefaultName))
+		if filename == "" || filename == "." || filename == string(filepath.Separator) {
+			filename = "quotapanel.png"
+		}
+		if !strings.HasSuffix(strings.ToLower(filename), ".png") {
+			filename += ".png"
+		}
+		path, err := runtime.SaveFileDialog(a.ctx, runtime.SaveDialogOptions{Title: title, DefaultFilename: filename, Filters: []runtime.FileFilter{{DisplayName: "PNG 图片", Pattern: "*.png"}}})
 		if err != nil {
 			return nil, err
 		}

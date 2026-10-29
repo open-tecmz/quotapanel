@@ -18,6 +18,30 @@
               {{ t('quota.account.add') }}
             </div>
           </a-button>
+          <a-dropdown :trigger="['click']" placement="bottomRight">
+            <a-button :disabled="accounts.length === 0" :title="t('quota.account.moreActions')">
+              <div class="inline-flex items-center gap-1">
+                <MoreHorizontal class="w-4 h-4" aria-hidden="true" />
+                {{ t('quota.account.moreActions') }}
+              </div>
+            </a-button>
+            <template #overlay>
+              <a-menu @click="onHeaderAction">
+                <a-menu-item key="share">
+                  <span class="inline-flex items-center gap-2">
+                    <ImageDown class="w-4 h-4" aria-hidden="true" />
+                    {{ t('quota.account.shareAll') }}
+                  </span>
+                </a-menu-item>
+                <a-menu-item key="copy">
+                  <span class="inline-flex items-center gap-2">
+                    <Copy class="w-4 h-4" aria-hidden="true" />
+                    {{ t('quota.account.copyShare') }}
+                  </span>
+                </a-menu-item>
+              </a-menu>
+            </template>
+          </a-dropdown>
         </template>
       </PageHeader>
     </div>
@@ -74,12 +98,21 @@
       :snapshot="detailAccount ? snapshots[detailAccount.id] : undefined"
       :loading="detailAccount ? queryingIds.has(detailAccount.id) : false"
     />
+
+    <SharePreviewModal
+      v-model:open="shareOpen"
+      :png-base64="sharePng"
+      :saving="shareSaving"
+      :title="t('quota.account.sharePreviewTitle')"
+      :hint="t('quota.account.sharePreviewHint')"
+      @save="doSaveShare"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
 import { message, Modal } from 'ant-design-vue'
-import { Plus, RefreshCw, Wallet } from 'lucide-vue-next'
+import { Copy, ImageDown, MoreHorizontal, Plus, RefreshCw, Wallet } from 'lucide-vue-next'
 import { nextTick, onMounted, onUnmounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
@@ -92,7 +125,8 @@ import { main } from '../api/main'
 import QuotaAccountCard from './QuotaAccount/QuotaAccountCard.vue'
 import QuotaAccountDetailModal from './QuotaAccount/QuotaAccountDetailModal.vue'
 import QuotaAccountModal from './QuotaAccount/QuotaAccountModal.vue'
-import { renderCardScreenshot } from '../utils/cardScreenshot'
+import SharePreviewModal from './QuotaAccount/SharePreviewModal.vue'
+import { renderCardScreenshot, renderShareImage } from '../utils/cardScreenshot'
 
 const { t } = useI18n()
 const appStore = useAppStore()
@@ -111,6 +145,11 @@ const modalRef = ref<InstanceType<typeof QuotaAccountModal> | null>(null)
 
 const showDetail = ref(false)
 const detailAccount = ref<QuotaAccount | null>(null)
+
+const shareOpen = ref(false)
+const sharePng = ref('')
+const shareSaving = ref(false)
+const website = ref('')
 
 // ── 卡片拖拽排序 ──────────────────────────────────────────────
 // draggingId：正在拖拽的账号；dropTarget：松手后的落位点；
@@ -311,11 +350,101 @@ async function doCopy(account: QuotaAccount) {
 
 async function doScreenshot(account: QuotaAccount) {
   try {
-    const pngBase64 = renderCardScreenshot(account, snapshots.value[account.id], appStore.locale)
-    const saved = await main.Call('quota.saveScreenshot', { accountId: account.id, pngBase64 })
+    const pngBase64 = renderCardScreenshot(account, snapshots.value[account.id], appStore.locale, {
+      website: website.value,
+    })
+    const saved = await main.Call('quota.saveImage', {
+      title: t('quota.account.screenshot'),
+      defaultName: `quota-card-${account.id}.png`,
+      pngBase64,
+    })
     if (saved) message.success(t('quota.account.screenshotSaved'))
   } catch (e: unknown) {
     message.error(e instanceof Error ? e.message : String(e))
+  }
+}
+
+// ── 分享图：列表长图 + 单卡截图共用同一套纸感绘制 ──────────────────
+function buildShareImage(): string {
+  return renderShareImage(accounts.value, snapshots.value, appStore.locale, {
+    website: website.value,
+  })
+}
+
+function shareFileName(): string {
+  const now = new Date()
+  const pad = (value: number) => String(value).padStart(2, '0')
+  return `quotapanel-share-${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}-${pad(now.getHours())}${pad(now.getMinutes())}.png`
+}
+
+function base64ToBlob(base64: string): Blob {
+  const binary = atob(base64)
+  const bytes = new Uint8Array(binary.length)
+  for (let index = 0; index < binary.length; index += 1) {
+    bytes[index] = binary.charCodeAt(index)
+  }
+  return new Blob([bytes], { type: 'image/png' })
+}
+
+function onHeaderAction(info: { key: string | number }) {
+  const key = String(info.key)
+  if (key === 'share') void doShare()
+  else if (key === 'copy') void doCopyShare()
+}
+
+async function doShare() {
+  if (accounts.value.length === 0) return
+  try {
+    sharePng.value = buildShareImage()
+    shareOpen.value = true
+  } catch (e: unknown) {
+    message.error(e instanceof Error ? e.message : String(e))
+  }
+}
+
+async function doCopyShare() {
+  if (accounts.value.length === 0) return
+  try {
+    const pngBase64 = buildShareImage()
+    const ClipboardItemCtor = (window as unknown as { ClipboardItem?: new (items: Record<string, Blob>) => unknown })
+      .ClipboardItem
+    if (!navigator.clipboard?.write || !ClipboardItemCtor) {
+      throw new Error(t('quota.account.shareCopyUnsupported'))
+    }
+    const items = [new ClipboardItemCtor({ 'image/png': base64ToBlob(pngBase64) })]
+    await (navigator.clipboard.write as unknown as (data: unknown[]) => Promise<void>)(items)
+    message.success(t('quota.account.shareCopied'))
+  } catch (e: unknown) {
+    message.error(e instanceof Error ? e.message : String(e))
+  }
+}
+
+async function doSaveShare() {
+  if (!sharePng.value || shareSaving.value) return
+  shareSaving.value = true
+  try {
+    const saved = await main.Call('quota.saveImage', {
+      title: t('quota.account.saveShareImage'),
+      defaultName: shareFileName(),
+      pngBase64: sharePng.value,
+    })
+    if (saved) {
+      message.success(t('quota.account.shareSaved'))
+      shareOpen.value = false
+    }
+  } catch (e: unknown) {
+    message.error(e instanceof Error ? e.message : String(e))
+  } finally {
+    shareSaving.value = false
+  }
+}
+
+async function loadWebsite() {
+  try {
+    const config = await main.Call('setting.getAppConfig')
+    website.value = String(config?.website || '')
+  } catch {
+    website.value = ''
   }
 }
 
@@ -351,6 +480,7 @@ async function onSaved(account: QuotaAccount) {
 }
 
 async function init() {
+  await loadWebsite()
   await loadProviders()
   await loadAccounts()
   await doQueryAll()
@@ -440,7 +570,25 @@ onMounted(() => {
     const { id } = params as { id: number }
     const account = accounts.value.find((item) => item.id === id)
     if (!account) throw new Error('账号不存在')
-    return renderCardScreenshot(account, snapshots.value[id], appStore.locale)
+    return renderCardScreenshot(account, snapshots.value[id], appStore.locale, {
+      website: website.value,
+    })
+  })
+  testActionSet('QuotaAccount.renderShareImage', (params: unknown) => {
+    const { includeNote } = (params ?? {}) as { includeNote?: boolean }
+    return renderShareImage(accounts.value, snapshots.value, appStore.locale, {
+      website: website.value,
+      includeNote: includeNote === true,
+    })
+  })
+  testActionSet('QuotaAccount.getShareState', () => ({
+    open: shareOpen.value,
+    hasImage: sharePng.value.length > 0,
+    saving: shareSaving.value,
+  }))
+  testActionSet('QuotaAccount.openSharePreview', async () => {
+    await doShare()
+    return true
   })
   testActionSet('QuotaAccount.previewSnapshot', (params: unknown) => {
     const snap = params as QuotaSnapshot
@@ -591,6 +739,9 @@ onUnmounted(() => {
     'QuotaAccount.queryAccount',
     'QuotaAccount.queryAll',
     'QuotaAccount.renderScreenshot',
+    'QuotaAccount.renderShareImage',
+    'QuotaAccount.getShareState',
+    'QuotaAccount.openSharePreview',
     'QuotaAccount.previewSnapshot',
     'QuotaAccount.openDetail',
     'QuotaAccount.closeDetail',
