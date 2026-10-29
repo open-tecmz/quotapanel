@@ -19,11 +19,12 @@
             </div>
           </a-button>
           <a-dropdown :trigger="['click']" placement="bottomRight">
-            <a-button :disabled="accounts.length === 0" :title="t('quota.account.moreActions')">
-              <div class="inline-flex items-center gap-1">
-                <MoreHorizontal class="w-4 h-4" aria-hidden="true" />
-                {{ t('quota.account.moreActions') }}
-              </div>
+            <a-button
+              :disabled="accounts.length === 0"
+              :title="t('quota.account.moreActions')"
+              :aria-label="t('quota.account.moreActions')"
+            >
+              <MoreHorizontal class="w-4 h-4" aria-hidden="true" />
             </a-button>
             <template #overlay>
               <a-menu @click="onHeaderAction">

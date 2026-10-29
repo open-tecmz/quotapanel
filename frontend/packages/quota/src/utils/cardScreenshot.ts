@@ -14,6 +14,12 @@ export interface ShareImageOptions {
 const DEFAULT_WEBSITE = 'open.tecmz.com/quotapanel'
 const FONT = 'Inter, system-ui, -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif'
 
+// 导出优先 3x（社交平台二次压缩后仍清晰）；账号很多时退回 2x，避免 Canvas 像素面积过大。
+const MAX_EXPORT_PIXELS = 24_000_000
+function exportScale(width: number, height: number): number {
+  return width * 3 * height * 3 <= MAX_EXPORT_PIXELS ? 3 : 2
+}
+
 // 分享图使用固定的「纸感」浅色主题：社交媒体上不依赖用户当前的明暗主题。
 const palette = {
   background: designTokens.color.neutral[50],
@@ -477,7 +483,7 @@ export function renderShareImage(
   const footerTop = accounts.length > 0 ? gridBottom + 18 : 250
   const height = footerTop + 64
 
-  const scale = 2
+  const scale = exportScale(width, height)
   const canvas = document.createElement('canvas')
   canvas.width = width * scale
   canvas.height = height * scale
@@ -542,7 +548,7 @@ export function renderCardScreenshot(
   const height = footerTop + 52
   const website = displayWebsite(options.website)
 
-  const scale = 2
+  const scale = exportScale(width, height)
   const canvas = document.createElement('canvas')
   canvas.width = width * scale
   canvas.height = height * scale
