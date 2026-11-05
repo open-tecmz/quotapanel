@@ -22,6 +22,65 @@ export interface VersionInfo {
   url?: string
 }
 
+// ─── 自动升级（update）───
+
+export interface UpdatePlatform {
+  name: string
+  arch: string
+  version: string
+}
+
+export interface UpdateAsset {
+  os: string
+  arch: string
+  kind: string
+  name: string
+  size: number
+  sha256: string
+  urls: string[]
+}
+
+export interface UpdateRelease {
+  name: string
+  version: string
+  time: string
+  summary: string
+  notes: string
+  url: string
+  channel: string
+  source?: string
+  assets: UpdateAsset[]
+}
+
+export interface UpdateState {
+  state:
+    | 'idle'
+    | 'checking'
+    | 'up-to-date'
+    | 'available'
+    | 'downloading'
+    | 'ready'
+    | 'installing'
+    | 'restarting'
+    | 'failed'
+  currentVersion: string
+  latestVersion: string
+  channel: string
+  release?: UpdateRelease
+  asset?: UpdateAsset
+  progress: number
+  downloaded: number
+  total: number
+  downloadedPath?: string
+  error?: string
+  updatedAt: string
+}
+
+export interface UpdateInstallResult {
+  message: string
+  restartRequired: boolean
+}
+
 export interface BrowserInfo {
   id: string
   name: string
@@ -368,6 +427,13 @@ export interface CallMap {
   }
   'setting.getPlatformArch': { args: void; ret: 'x86' | 'arm64' | 'none' }
   'setting.openDataDir': { args: void; ret: void }
+
+  // ── update：自动升级 ─────────────────────────────────────
+  'update.getState': { args: void; ret: UpdateState }
+  'update.check': { args: { channel?: string }; ret: UpdateState }
+  'update.setChannel': { args: { channel: string }; ret: UpdateState }
+  'update.download': { args: void; ret: void }
+  'update.install': { args: void; ret: UpdateInstallResult }
 
   // ── quota：AI 订阅额度 ────────────────────────────────────
   'quota.getProviders': { args: void; ret: QuotaProviderInfo[] }

@@ -8,6 +8,7 @@ import { EventsEmit, EventsOff, EventsOn, WindowSetAlwaysOnTop } from '../wailsj
 import AppSidebar from './components/AppSidebar.vue'
 import AppTitlebar from './components/AppTitlebar.vue'
 import CloseConfirmModal from './components/CloseConfirmModal.vue'
+import UpdateDownloadModal from './components/UpdateDownloadModal.vue'
 import { useModuleConfig } from './config/module'
 import { useAppStore } from './stores/app'
 import { designTokens } from './theme/tokens'
@@ -275,6 +276,7 @@ onUnmounted(() => {
     
 
     <CloseConfirmModal v-model:open="showCloseConfirm" />
+    <UpdateDownloadModal />
   </ConfigProvider>
 </template>
 

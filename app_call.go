@@ -43,5 +43,10 @@ func (a *App) Call(name string, args json.RawMessage) (result interface{}, callE
 		return a.quotaCall(name, decode)
 	}
 
+	// update.* 由 app_update.go 处理（检查 / 下载 / 安装新版本）
+	if strings.HasPrefix(name, "update.") {
+		return a.updateCall(name, decode)
+	}
+
 	return nil, fmt.Errorf("未知方法: %s", name)
 }

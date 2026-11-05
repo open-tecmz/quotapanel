@@ -69,13 +69,32 @@
           <div class="row-copy">
             <div class="row-label">{{ t('settings.version.title') }}</div>
             <div class="row-desc">{{ t('settings.version.currentVersion') }}：{{ appVersion || '-' }}</div>
-            <div v-if="versionMessage" class="version-message">{{ versionMessage }}</div>
+            <div v-if="updateState?.state === 'downloading'" class="version-message">
+              {{ t('settings.version.backgroundDownloading', { progress: updateState?.progress || 0 }) }}
+            </div>
+            <div v-else-if="updateState?.state === 'ready'" class="version-message">
+              {{ t('settings.version.updateReady') }}
+            </div>
+            <div v-else-if="updateState?.state === 'available'" class="version-message">
+              {{ t('settings.version.newVersion', { version: updateState?.latestVersion || '' }) }}
+            </div>
+            <div v-else-if="versionMessage" class="version-message">{{ versionMessage }}</div>
           </div>
+          <a-button v-if="updateState?.state === 'ready'" type="primary" @click="doShowUpdateModal">
+            {{ t('settings.version.restartAndUpdate') }}
+          </a-button>
+          <a-button
+            v-else-if="updateState?.state === 'available' && updateState?.asset"
+            type="primary"
+            @click="doDownloadUpdate"
+          >
+            {{ t('settings.version.downloadUpdate') }}
+          </a-button>
+          <a-button v-else-if="updateState?.state === 'available'" @click="doOpenDownloadPage">
+            {{ t('settings.version.updateAvailable') }}
+          </a-button>
           <a-button :loading="checkingVersion" @click="doCheckVersion">{{
             t('settings.version.checkUpdate')
-          }}</a-button>
-          <a-button v-if="updateURL" @click="BrowserOpenURL(updateURL)">{{
-            t('settings.version.updateAvailable')
           }}</a-button>
         </div>
       </div>
@@ -101,7 +120,7 @@
 import { message } from 'ant-design-vue'
 import type { RadioChangeEvent } from 'ant-design-vue'
 import { Languages, FolderOpen, MessageSquare, Moon, Power, RefreshCw, Settings, X } from 'lucide-vue-next'
-import { nextTick, onMounted, onUnmounted, ref } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { BrowserOpenURL } from '@quotapanel/ui/wailsjs/runtime/runtime'
@@ -109,6 +128,14 @@ import FeedbackModal from '@quotapanel/ui/src/components/FeedbackModal.vue'
 import PageHeader from '@quotapanel/ui/src/components/PageHeader.vue'
 import { useAppStore } from '@quotapanel/ui/src/stores/app'
 import { testActionSet, testActionUnset } from '@quotapanel/ui/src/utils/test'
+import {
+  bindUpdateEvents,
+  checkUpdateOnly,
+  checkVersionAndPrompt,
+  downloadUpdate,
+  showUpdateModal,
+  updateStore,
+} from '@quotapanel/ui/src/utils/version'
 import { main } from '../api/main'
 
 const { t } = useI18n()
@@ -119,11 +146,11 @@ const closeAction = ref('')
 const appVersion = ref('')
 const checkingVersion = ref(false)
 const versionMessage = ref('')
-const updateURL = ref('')
 const feedbackUrl = ref('')
 const dataRoot = ref('')
 const dataRootIsDefault = ref(true)
 const showFeedback = ref(false)
+const updateState = computed(() => updateStore.state)
 
 async function loadSettings() {
   try {
@@ -185,28 +212,18 @@ async function doOpenDataDir() {
   }
 }
 
-function compareVersions(left: string, right: string): number {
-  const a = left.replace(/^v/i, '').split('.').map(Number)
-  const b = right.replace(/^v/i, '').split('.').map(Number)
-  for (let index = 0; index < Math.max(a.length, b.length); index++) {
-    const diff = (a[index] || 0) - (b[index] || 0)
-    if (diff !== 0) return diff
-  }
-  return 0
-}
-
 async function doCheckVersion() {
   checkingVersion.value = true
-  updateURL.value = ''
   versionMessage.value = ''
   try {
-    const latest = await main.Call('setting.checkVersion')
-    if (!latest?.version) throw new Error('版本服务未返回版本号')
-    if (compareVersions(latest.version, appVersion.value) > 0) {
-      versionMessage.value = t('settings.version.newVersion', { version: latest.version })
-      updateURL.value = latest.url || ''
-    } else {
+    await checkVersionAndPrompt({ showLatestMessage: true, showErrorMessage: true })
+    const state = updateStore.state
+    if (state?.state === 'up-to-date') {
       versionMessage.value = t('settings.version.latestVersion')
+    } else if (state?.state === 'available' || state?.state === 'ready') {
+      versionMessage.value = t('settings.version.newVersion', {
+        version: state.latestVersion,
+      })
     }
   } catch (error) {
     versionMessage.value = `${t('settings.version.checkFailed')}：${String(error)}`
@@ -215,8 +232,24 @@ async function doCheckVersion() {
   }
 }
 
+function doDownloadUpdate() {
+  downloadUpdate().catch((error: unknown) => {
+    message.error(String(error))
+  })
+}
+
+function doShowUpdateModal() {
+  showUpdateModal()
+}
+
+function doOpenDownloadPage() {
+  const url = updateStore.state?.release?.url || 'https://open.tecmz.com/quotapanel'
+  BrowserOpenURL(url)
+}
+
 onMounted(async () => {
   await loadSettings()
+  bindUpdateEvents()
   testActionSet('QuotaSetting.getState', () => ({
     locale: appStore.locale,
     dark: appStore.isDark,
@@ -247,6 +280,12 @@ onMounted(async () => {
     path: dataRoot.value,
     isDefault: dataRootIsDefault.value,
   }))
+  testActionSet('QuotaSetting.getUpdateState', () => updateStore.state)
+  testActionSet('QuotaSetting.openUpdateModal', () => {
+    showUpdateModal()
+    return true
+  })
+  testActionSet('QuotaSetting.checkUpdate', async () => checkUpdateOnly('latest'))
   testActionSet('QuotaSetting.openFeedback', () => {
     showFeedback.value = true
     return true
@@ -279,6 +318,9 @@ onUnmounted(() => {
     'QuotaSetting.setCloseAction',
     'QuotaSetting.getFeedback',
     'QuotaSetting.getDataRoot',
+    'QuotaSetting.getUpdateState',
+    'QuotaSetting.openUpdateModal',
+    'QuotaSetting.checkUpdate',
     'QuotaSetting.openFeedback',
     'QuotaSetting.closeFeedback',
     'setting.prepare',

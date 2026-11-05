@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 env:
-  GO_VERSION: '1.24'
+  GO_VERSION: '1.25'
   NODE_VERSION: '22'
   APP_NAME: 'QuotaPanel'
 
@@ -202,6 +202,21 @@ jobs:
           # Verify the signature
           codesign --verify --verbose=4 "$APP_PATH"
 
+          # Build the zip used by the in-app updater. The .app inside must carry
+          # the notarization ticket, otherwise Gatekeeper rejects it after the
+          # automatic replacement. Notarize the zip, staple the .app, then
+          # recreate the zip so the ticket is included.
+          ZIP_NAME="QuotaPanel-${VERSION}-darwin-${{ matrix.goarch }}.zip"
+          ditto -c -k --sequesterRsrc --keepParent "$APP_PATH" "$ZIP_NAME"
+          xcrun notarytool submit "$ZIP_NAME" \
+            --apple-id "$APPLE_ID" \
+            --password "$APPLE_APP_SPECIFIC_PASSWORD" \
+            --team-id "$APPLE_TEAM_ID" \
+            --wait
+          xcrun stapler staple "$APP_PATH"
+          rm -f "$ZIP_NAME"
+          ditto -c -k --sequesterRsrc --keepParent "$APP_PATH" "$ZIP_NAME"
+
           # Create DMG
           brew install create-dmg
           create-dmg \
@@ -264,7 +279,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: quotapanel-mac-${{ matrix.goarch }}
-          path: code/QuotaPanel-*-darwin-${{ matrix.goarch }}.dmg
+          path: |
+            code/QuotaPanel-*-darwin-${{ matrix.goarch }}.dmg
+            code/QuotaPanel-*-darwin-${{ matrix.goarch }}.zip
 
       - name: Upload Artifact (Linux)
         if: runner.os == 'Linux'
@@ -291,6 +308,7 @@ jobs:
               code/QuotaPanel-*-linux-*.AppImage:apps/{random}.bin:{name}.AppImage
               code/build/bin/QuotaPanel-*-windows-*.exe:apps/{random}.bin:{name}.exe
               code/QuotaPanel-*-darwin-*.dmg:apps/{random}.bin:{name}.dmg
+              code/QuotaPanel-*-darwin-*.zip:apps/{random}.bin:{name}.zip
 
       - name: Save OSS Downloads for Notify
         shell: bash
@@ -326,26 +344,13 @@ jobs:
           pattern: quotapanel-*
           path: _artifacts
           merge-multiple: false
-      - name: Read Version
-        run: |
-          VERSION=$(sed -n 's/.*Version:[[:space:]]*"v*\([^"]*\)".*/\1/p' app.go | head -1)
-          echo "VERSION=$VERSION" >> $GITHUB_ENV
-          echo "Snapshot release title: snapshot-${VERSION}"
-      - name: Upload to Snapshot Release (with overwrite)
+      - name: Recreate Snapshot Release (fresh, latest)
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          TITLE="snapshot-${VERSION}"
-          # Ensure vsnapshot release exists (create if not)
-          if ! gh release view vsnapshot >/dev/null 2>&1; then
-            gh release create vsnapshot \
-              --title "$TITLE" \
-              --notes "Latest build from main branch" \
-              --prerelease
-          else
-            # Update the title to the current version
-            gh release edit vsnapshot --title "$TITLE"
-          fi
+          # Always drop the previous snapshot (and its tag) so nothing is reused
+          echo "=== Removing previous vsnapshot release ==="
+          gh release delete vsnapshot --yes --cleanup-tag 2>/dev/null || true
           # Copy artifacts to temp dir with version replaced by "snapshot"
           tmpdir=$(mktemp -d)
           echo "=== Downloaded artifacts ==="
@@ -357,10 +362,28 @@ jobs:
             cp "$f" "$tmpdir/$clean"
             echo "Staged: $base -> $clean"
           done
+          # Read the version from an artifact filename. It is exactly the
+          # version written in app.go; snapshot titles stay identical to the
+          # source version instead of appending the workflow run number.
+          ARTIFACT=$(find _artifacts -type f -name 'QuotaPanel-*' | head -1)
+          VERSION=$(basename "$ARTIFACT" | sed -E 's/^QuotaPanel-(.+)-(darwin|windows|linux)-(amd64|arm64)\..*$/\1/')
+          if [ -z "$VERSION" ]; then
+            echo "Cannot detect snapshot version from ${ARTIFACT:-<no artifact>}" >&2
+            exit 1
+          fi
+          echo "Detected version: $VERSION"
+          # Checksums over the snapshot-named files, matching release assets.
+          ( cd "$tmpdir" && find . -type f -name 'QuotaPanel-*' -printf '%P\n' | sort | xargs -r sha256sum > checksums.txt )
+          # Create a brand new snapshot release and mark it as latest
+          echo "=== Creating fresh vsnapshot release ==="
+          gh release create vsnapshot \
+            --title "snapshot-${VERSION}" \
+            --notes "Latest build from main branch (run ${GITHUB_RUN_NUMBER})" \
+            --latest
           echo "=== Uploading to vsnapshot ==="
           for f in "$tmpdir"/*; do
             echo "Uploading: $(basename "$f")"
-            gh release upload vsnapshot "$f" --clobber
+            gh release upload vsnapshot "$f"
           done
           rm -rf "$tmpdir"
 

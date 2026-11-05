@@ -1,5 +1,11 @@
 ## [unreleased]
 
+- 新增：应用内自动升级——设置页「版本更新」支持检测新版本、后台下载（下载地址与镜像由后端返回，客户端多镜像测速 + SHA-256 校验）、下载进度弹窗与最小化悬浮球，下载完成后一键重启安装；macOS 用公证后的 zip 原位置换 .app，Windows 用独立 exe 置换并自动重启，Linux 直接替换 AppImage（替换前检查 WebKitGTK 依赖）。
+- 新增：升级后端不可用时自动回退到 GitHub Releases（读取 `checksums.txt` 校验），支持 latest / stable / beta 通道；`QUOTAPANEL_UPDATE_ENDPOINT` 可指向测试后端，`QUOTAPANEL_DISABLE_UPDATE_CHECK=1` 可关闭启动自动检测。
+- 新增：新增 `update.*` 统一调用接口（getState / check / setChannel / download / install），升级状态通过 `update:state` 事件实时推送到前端。
+- 优化：GitHub Actions 发布流程补齐自动升级所需产物——macOS 公证并装订 zip、生成 `checksums.txt`、发布正式 Release（带 `-` 的标签自动标记 prerelease）；snapshot 发布同样附带校验文件。
+- 优化：CI 使用的 Go 版本提升到 1.25，与 `go.mod` 保持一致。
+
 - 新增：订阅额度页右上角「更多」菜单与卡片「更多」菜单均提供「分享」：点击后打开分享图预览，可保存带品牌页脚的分享长图（全部卡片）或单卡分享图；截图同步加上四周留白、纸感背景与「使用 QuotaPanel 生成」页脚，分享到社交媒体更完整。
 - 新增：订阅卡片支持拖拽排序——按住卡片左上角手柄拖动即可调整顺序，落位指示条实时提示插入位置，松手后持久化；新增 `quota.reorderAccounts` 接口与账号 `sortOrder` 字段（升级时按原有 id 顺序回填，新增账号自动排在末尾），主界面列表与菜单栏迷你面板同步生效。
 - 优化：额度自动全量查询（页面打开自动查询 / 每 5 分钟轮询 / 迷你面板刷新）跳过未登录的浏览器类账号，不再无谓启动无头浏览器。

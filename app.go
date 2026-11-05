@@ -24,6 +24,7 @@ import (
 	"quotapanel/backend/base/logging"
 	"quotapanel/backend/base/service"
 	"quotapanel/backend/base/store"
+	"quotapanel/backend/base/updater"
 
 	"quotapanel/backend/quota"
 
@@ -63,6 +64,10 @@ type App struct {
 	// rendererLastPing is the unix-nano timestamp of the last renderer heartbeat
 	// (0 = never). Used to detect a stalled / white-screen UI at runtime.
 	rendererLastPing atomic.Int64
+	// updateMgr owns the check/download/install state machine. It is created
+	// lazily after the config (device UUID) is loaded in startup.
+	updateMgr  *updater.Manager
+	updateOnce sync.Once
 }
 
 // NewApp creates a new App application struct
@@ -851,6 +856,9 @@ func (a *App) callCommon(name string, decode func(interface{}) error) (interface
 			"helpUrl":           appConfig.HelpUrl,
 			"dataRoot":          a.dataDir,
 			"dataRootIsDefault": isDefaultDataDir(a.dataDir),
+			// Enterprise / CI deployments can disable the automatic startup
+			// check while keeping the manual check in Settings available.
+			"updateCheckDisabled": os.Getenv("QUOTAPANEL_DISABLE_UPDATE_CHECK") == "1",
 		}, nil, true
 
 	case "setting.checkVersion":

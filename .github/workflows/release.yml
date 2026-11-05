@@ -6,7 +6,7 @@ on:
       - 'v*.*.*'
 
 env:
-  GO_VERSION: '1.24'
+  GO_VERSION: '1.25'
   NODE_VERSION: '22'
   APP_NAME: 'QuotaPanel'
 
@@ -201,6 +201,21 @@ jobs:
           # Verify the signature
           codesign --verify --verbose=4 "$APP_PATH"
 
+          # Build the zip used by the in-app updater. The .app inside must carry
+          # the notarization ticket, otherwise Gatekeeper rejects it after the
+          # automatic replacement. Notarize the zip, staple the .app, then
+          # recreate the zip so the ticket is included.
+          ZIP_NAME="QuotaPanel-${VERSION}-darwin-${{ matrix.goarch }}.zip"
+          ditto -c -k --sequesterRsrc --keepParent "$APP_PATH" "$ZIP_NAME"
+          xcrun notarytool submit "$ZIP_NAME" \
+            --apple-id "$APPLE_ID" \
+            --password "$APPLE_APP_SPECIFIC_PASSWORD" \
+            --team-id "$APPLE_TEAM_ID" \
+            --wait
+          xcrun stapler staple "$APP_PATH"
+          rm -f "$ZIP_NAME"
+          ditto -c -k --sequesterRsrc --keepParent "$APP_PATH" "$ZIP_NAME"
+
           # Create DMG
           brew install create-dmg
           create-dmg \
@@ -263,7 +278,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: quotapanel-mac-${{ matrix.goarch }}
-          path: code/QuotaPanel-*-darwin-${{ matrix.goarch }}.dmg
+          path: |
+            code/QuotaPanel-*-darwin-${{ matrix.goarch }}.dmg
+            code/QuotaPanel-*-darwin-${{ matrix.goarch }}.zip
 
       - name: Upload Artifact (Linux)
         if: runner.os == 'Linux'
@@ -290,6 +307,7 @@ jobs:
               code/QuotaPanel-*-linux-*.AppImage:apps/{random}.bin:{name}.AppImage
               code/build/bin/QuotaPanel-*-windows-*.exe:apps/{random}.bin:{name}.exe
               code/QuotaPanel-*-darwin-*.dmg:apps/{random}.bin:{name}.dmg
+              code/QuotaPanel-*-darwin-*.zip:apps/{random}.bin:{name}.zip
 
       - name: Save OSS Downloads for Notify
         shell: bash
@@ -329,21 +347,36 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           TAG=${GITHUB_REF#refs/tags/}
+
+          # checksums.txt is what the client verifies every download against.
+          # Generate it from the artifacts before uploading anything.
+          # Artifacts are downloaded into per-artifact subdirectories; the
+          # client matches assets by file name, so checksums must use basenames.
+          cd _artifacts
+          find . -type f -name 'QuotaPanel-*' -print0 | xargs -0 -r sha256sum | sed -E 's#  .*/#  #' | sort -k2 > checksums.txt
+          echo "=== checksums.txt ==="
+          cat checksums.txt
+          cd ..
+
           # Delete any existing release for this tag (handles force-push)
           gh release delete "$TAG" --yes 2>/dev/null || true
-          # Create release (draft, idempotent)
-          if ! gh release view "$TAG" >/dev/null 2>&1; then
-            gh release create "$TAG" \
-              --title "$TAG" \
-              --draft \
-              --prerelease=false \
-              --notes ""
-          fi
-          # Upload all artifacts
-          find _artifacts/ -type f | while read f; do
+          # Publish immediately: the updater only sees published releases.
+          # A tag with a suffix (v0.4.0-beta) is marked as a pre-release.
+          PRERELEASE=false
+          case "$TAG" in *-*) PRERELEASE=true ;; esac
+          gh release create "$TAG" \
+            --title "$TAG" \
+            --draft=false \
+            --prerelease=$PRERELEASE \
+            --notes "" \
+            2>/dev/null || true
+
+          # Upload all artifacts (checksums.txt is uploaded separately).
+          find _artifacts/ -type f ! -name checksums.txt | while read f; do
             echo "Uploading: $(basename "$f")"
             gh release upload "$TAG" "$f" --clobber
           done
+          gh release upload "$TAG" "_artifacts/checksums.txt" --clobber
 
   # ── Notify ────────────────────────────────────────────────────────────────────
   notify:
