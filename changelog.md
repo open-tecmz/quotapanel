@@ -1,5 +1,6 @@
 ## [unreleased]
 
+- 新增：升级包下载支持断点续传与自动重试——中断后保留 `.part` 分片，下次通过 HTTP Range 从已下载字节继续（多个镜像之间也可接力续传）；默认最多 4 轮重试并指数退避，校验失败会丢弃损坏分片后重新下载
 - 新增：应用内自动升级——设置页「版本更新」支持检测新版本、后台下载（下载地址与镜像由后端返回，客户端多镜像测速 + SHA-256 校验）、下载进度弹窗与最小化悬浮球，下载完成后一键重启安装；macOS 用公证后的 zip 原位置换 .app，Windows 用独立 exe 置换并自动重启，Linux 直接替换 AppImage（替换前检查 WebKitGTK 依赖）。
 - 新增：升级后端不可用时自动回退到 GitHub Releases（读取 `checksums.txt` 校验），支持 latest / stable / beta 通道；`QUOTAPANEL_UPDATE_ENDPOINT` 可指向测试后端，`QUOTAPANEL_DISABLE_UPDATE_CHECK=1` 可关闭启动自动检测。
 - 新增：新增 `update.*` 统一调用接口（getState / check / setChannel / download / install），升级状态通过 `update:state` 事件实时推送到前端。
