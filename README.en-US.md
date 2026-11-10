@@ -31,7 +31,7 @@
 
 | Feature | Description |
 |---------|-------------|
-| **Multi-source aggregation** | 16 AI subscription and API quota sources, shown as unified cards |
+| **Multi-source aggregation** | 17 AI subscription and API quota sources, shown as unified cards |
 | **Quota visualization** | Quota windows, balances, usage stats, reset and billing times in one place |
 | **Detail modal** | Click a card to see all quota windows, balances and usage details |
 | **Status hints** | Normal / Nearly exhausted / Exceeded status colors with threshold warnings |
@@ -66,6 +66,7 @@
 | **Devin / Windsurf** | Daily and weekly quotas plus overage balance |
 | **Grok CLI** | Grok CLI subscription period quota |
 | **OpenCode** | Official Go plan rolling (5-hour) / weekly / monthly usage |
+| **OpenDesign** | Design / Coding Plan 5-hour and weekly windows plus wallet balance (needs a Control Key, workspace ID optional; inference API keys cannot read quota) |
 | **Command Goat** | Command Code (CommandGoat) account, plan and window usage |
 | **DeepSeek API** | DeepSeek open platform balance |
 | **Kimi API** | Kimi open platform balance |

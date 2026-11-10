@@ -15,6 +15,7 @@
 | Devin / Windsurf | Devin 扩展 API Key | 已接入 |
 | Grok CLI | Grok CLI OAuth access token | 已接入 |
 | OpenCode | API Key | 已接入 |
+| OpenDesign | Control Key + 工作区 ID，读控制台只读计费接口（billing/preflight、wallet/balance） | 已接入 |
 | Command Goat | API Key | 已接入 |
 | DeepSeek API | API Key | 已接入 |
 | Kimi 开放平台 API | API Key | 已接入 |
@@ -24,3 +25,5 @@
 浏览器账号通过 Chrome/Edge 独立应用窗口登录。每个账号的浏览器资料目录单独保存，登录后的 Cookie 留在浏览器资料内；应用每五分钟在相应会话中读取额度。Wails v2 当前程序为单窗口，因此这里使用独立 Chrome/Edge 窗口，并非嵌入式 WebView。删除账号时会删除其浏览器资料目录。
 
 站内接口及第三方内部接口没有稳定性承诺，网站改版或登录策略变化可能使查询失效。实际账号的登录与远端响应需要用户在应用中验证；自动测试覆盖了样例响应映射、浏览器 Cookie 持久化及应用构建。Antigravity 等依赖本机其他应用运行状态和专有认证流程，尚未接入；不能把 GitHub 上所有项目的供应商无差别移植为可用适配器。
+
+OpenDesign 的额度接口只对网页登录态与桌面端的 Control Key 开放：推理 API Key（`sk-amr_…`）调用 `/v1/usage` 为 404，账户侧接口一律 401，官方尚未提供按 Key 查询额度的公开契约。Control Key 模式下先用 `/workspaces/current` 自动取当前工作区（也可显式填写），额度窗口以 `durationSeconds` 区分（`18000` 为 5 小时，`604800` 为每周），credits 不是美元金额，界面按「已用 / 上限 credits」展示，钱包余额单独读取。官方可能随时调整这些接口的可用范围，接入后需按实际账号复核。

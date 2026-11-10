@@ -1,7 +1,7 @@
 {
   "name": "quotapanel-frontend",
   "private": true,
-  "version": "0.3.0-beta",
+  "version": "0.3.0-beta.1",
   "scripts": {
     "dev": "pnpm --filter @quotapanel/ui dev",
     "build": "pnpm --filter @quotapanel/ui build",

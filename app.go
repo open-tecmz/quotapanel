@@ -646,7 +646,7 @@ var appConfig = struct {
 	Name:            "quotapanel",
 	Title:           "QuotaPanel",
 	Slogan:          DefaultSlogan,
-	Version:         "v0.3.0-beta",
+	Version:         "v0.3.0-beta.1",
 	Website:         siteBaseURL + "/quotapanel",
 	WebsiteGithub:   "https://github.com/open-tecmz/quotapanel",
 	WebsiteGitee:    "https://gitee.com/open-tecmz/quotapanel",
