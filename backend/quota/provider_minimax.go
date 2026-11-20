@@ -1,6 +1,7 @@
 package quota
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 )
@@ -8,6 +9,28 @@ import (
 func init() { Register(minimaxProvider{}) }
 
 type minimaxProvider struct{}
+
+// minimaxEndpoints lists MiniMax's regional Token Plan deployments. Global and
+// mainland China are separate account systems: a key issued in one region is
+// rejected by the other one with status 2049 ("invalid api key"). The official
+// CLI (mmx) and cc-switch therefore probe the regions instead of hardcoding one.
+var minimaxEndpoints = []string{
+	"https://www.minimax.io/v1/token_plan/remains",
+	"https://www.minimax.cn/v1/token_plan/remains",
+}
+
+// minimaxAPIError is a non-zero base_resp returned by the usage endpoint.
+type minimaxAPIError struct {
+	Code    int
+	Message string
+}
+
+func (e *minimaxAPIError) Error() string { return fmt.Sprintf("MiniMax: %s", e.Message) }
+
+// minimaxAuthStatus reports whether a base_resp code means "this deployment
+// does not accept the key": 2049 invalid api key (key from the other region or
+// revoked), 1004 login failure (missing or malformed key).
+func minimaxAuthStatus(code int) bool { return code == 2049 || code == 1004 }
 
 func (minimaxProvider) Info() ProviderInfo {
 	return ProviderInfo{ID: "minimax", Name: "MiniMax Token Plan", Description: "查询 MiniMax Token Plan 的滚动及每周剩余额度", Mode: ModeAPI, KeyLabel: "API Key", KeyHint: "请输入 MiniMax API Key", DocsURL: "https://github.com/deviffyy/OpenQuota"}
@@ -31,12 +54,37 @@ type minimaxRemains struct {
 }
 
 func (minimaxProvider) Query(qc *QueryContext) (*Snapshot, error) {
+	return queryMiniMax(qc.Account.Key, minimaxEndpoints)
+}
+
+// queryMiniMax asks each regional deployment in turn and keeps the first
+// snapshot. A rejected key is the only failure that says "wrong region", so
+// anything else stops the probe instead of being retried elsewhere.
+func queryMiniMax(key string, endpoints []string) (*Snapshot, error) {
+	var authErr error
+	for _, endpoint := range endpoints {
+		snap, err := queryMiniMaxAt(endpoint, key)
+		if err == nil {
+			return snap, nil
+		}
+		var apiErr *minimaxAPIError
+		if !errors.As(err, &apiErr) || !minimaxAuthStatus(apiErr.Code) {
+			return nil, err
+		}
+		if authErr == nil {
+			authErr = err
+		}
+	}
+	return nil, authErr
+}
+
+func queryMiniMaxAt(endpoint, key string) (*Snapshot, error) {
 	var resp minimaxRemains
-	if err := httpGetJSON("https://www.minimax.io/v1/token_plan/remains", map[string]string{"Authorization": "Bearer " + strings.TrimSpace(qc.Account.Key)}, &resp); err != nil {
+	if err := httpGetJSON(endpoint, map[string]string{"Authorization": "Bearer " + strings.TrimSpace(key)}, &resp); err != nil {
 		return nil, err
 	}
 	if resp.BaseResp.StatusCode != 0 {
-		return nil, fmt.Errorf("MiniMax: %s", resp.BaseResp.StatusMsg)
+		return nil, &minimaxAPIError{Code: resp.BaseResp.StatusCode, Message: resp.BaseResp.StatusMsg}
 	}
 	snap := &Snapshot{Provider: "minimax", Plan: "Token Plan", Status: "ok", Windows: []Window{}, Balances: []Stat{}, Stats: []Stat{}, UpdatedAt: now()}
 	for _, model := range resp.Models {
