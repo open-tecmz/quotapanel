@@ -1,147 +1,105 @@
-# 🎯 QuotaPanel - AI Subscription Quota Panel
+# QuotaPanel
 
-<div align="center">
-  <img src="./demo/image/account.png" alt="QuotaPanel main screen" width="800"/>
-</div>
+<p align="center">
+  <img src="./assets/readme/hero-en.svg" width="100%" alt="QuotaPanel: 17 AI subscription and API quotas in one desktop panel">
+</p>
 
-> [🇨🇳 中文](README.md) | [🇺🇸 English](README.en-US.md)
+<p align="center">
+  <a href="README.md">中文</a> ·
+  <a href="https://open.tecmz.com/quotapanel">Download</a> ·
+  <a href="https://github.com/open-tecmz/quotapanel">GitHub</a> ·
+  <a href="https://gitee.com/open-tecmz/quotapanel">Gitee</a>
+</p>
 
-<div align="center">
-  <img src="https://img.shields.io/badge/Framework-Go%20%2B%20Wails%20%2B%20Vue3-blue" alt="Framework"/>
-  <a href="https://open.tecmz.com/quotapanel"><img src="https://img.shields.io/badge/Website-open.tecmz.com%2Fquotapanel-blue" alt="Website"/></a>
-  <a href="https://github.com/open-tecmz/quotapanel"><img src="https://img.shields.io/github/stars/open-tecmz/quotapanel.svg" alt="GitHub Stars"/></a>
-  <a href="https://gitee.com/open-tecmz/quotapanel"><img src="https://gitee.com/open-tecmz/quotapanel/badge/star.svg" alt="Gitee Stars"/></a>
-  <img src="https://img.shields.io/badge/License-Apache%202.0-green" alt="License"/>
-</div>
+<p align="center">
+  <img src="https://img.shields.io/badge/Go%20%2B%20Wails%20%2B%20Vue3-desktop-blue" alt="Go + Wails + Vue3"/>
+  <img src="https://img.shields.io/badge/License-Apache%202.0-green" alt="Apache-2.0"/>
+  <a href="https://github.com/open-tecmz/quotapanel"><img src="https://img.shields.io/github/stars/open-tecmz/quotapanel.svg" alt="GitHub stars"/></a>
+  <a href="https://gitee.com/open-tecmz/quotapanel"><img src="https://gitee.com/open-tecmz/quotapanel/badge/star.svg" alt="Gitee stars"/></a>
+</p>
 
-## ✨ Overview
+Once you pay for more than one AI service, the quota information spreads out: Claude's 5-hour window, Codex's weekly cap, Cursor's billing cycle, DeepSeek and OpenRouter balances, each behind a different dashboard. QuotaPanel pulls those queries into one desktop app, one card per account, showing what you have used, what is left and when it resets.
 
-**QuotaPanel** is an open-source desktop panel for AI quotas. It gathers subscriptions and API balances that are otherwise scattered across provider dashboards — Claude, ChatGPT / Codex, Cursor, GitHub Copilot, Z.ai, Kimi, MiniMax, OpenRouter and more — into a single view, so one refresh shows every account's quota windows, remaining usage and reset times.
+Account details, API keys and browser sessions stay on your machine. The app queries each provider's endpoint directly; nothing is relayed through a server.
 
-> 🎯 **Goal**: no more surprises when your subscriptions pile up — see all your AI quotas on one panel.
+## Screenshots
 
-- 🔐 **Local first**: account keys and browser sessions stay on your machine, nothing is uploaded
-- 🔄 **Auto refresh**: polls every 5 minutes, with manual refresh for a single account or all of them
-- 🌐 **Browser login**: subscriptions that require a web login use a dedicated browser window with a persisted session
-- 📊 **Quota visualization**: progress bars, balance details, and billing/reset times at a glance
-- 🎨 **Light & dark themes**: one-click switch
-- 🖥️ **Cross-platform**: **macOS / Windows / Linux**
+<p align="center">
+  <img src="./assets/readme/shot-home.png" width="100%" alt="QuotaPanel main screen: one card per account with quota bars, balances and reset times">
+</p>
 
-## 📋 Features
+<p align="center"><sub>Main screen: one card per account, the bar color follows the status</sub></p>
 
-| Feature | Description |
-|---------|-------------|
-| **Multi-source aggregation** | 17 AI subscription and API quota sources, shown as unified cards |
-| **Quota visualization** | Quota windows, balances, usage stats, reset and billing times in one place |
-| **Detail modal** | Click a card to see all quota windows, balances and usage details |
-| **Status hints** | Normal / Nearly exhausted / Exceeded status colors with threshold warnings |
-| **Key management** | Sensitive values are masked by default and can be copied |
-| **Card screenshot** | Save a single subscription card as a PNG |
-| **Browser login** | Sign in through a dedicated Chrome / Edge window; the session is kept and cleaned up with the account |
-| **Scheduled refresh** | Automatic query every 5 minutes, plus manual refresh |
-| **Multi-language** | Simplified Chinese / English |
-| **Launch at login** | Optional auto start with the system |
-| **Tray resident** | macOS menu bar / Windows, Linux system tray with show, restart and quit |
-| **Close behavior** | Choose "ask every time / quit / hide to background" when closing the window |
+<p align="center">
+  <img src="./assets/readme/shot-card.png" width="100%" alt="A single quota card with 5-hour, weekly and monthly windows">
+</p>
 
-## 🔌 Supported Quota Sources
+<p align="center"><sub>The card itself: quota windows, used / total, next reset</sub></p>
 
-### Browser Login
+<p align="center">
+  <img src="./assets/readme/shot-detail.png" width="49%" alt="Account detail modal listing every quota window, balance and usage stat">
+  <img src="./assets/readme/shot-home-dark.png" width="49%" alt="Main screen in the dark theme">
+</p>
 
-| Source | Description |
-|--------|-------------|
-| **Claude** | Read 5-hour and weekly quotas after signing in to Claude in the dedicated window |
-| **ChatGPT / Codex** | Read the Codex subscription usage window after signing in to ChatGPT |
-| **Cursor** | Read the current billing cycle usage after signing in to Cursor |
-| **Xiaomi MiMo Token Plan** | Read Token Plan credits and account balance after signing in to the MiMo platform |
+<p align="center"><sub>Left: detail modal · Right: dark theme</sub></p>
 
-### API Key
+<p align="center">
+  <img src="./assets/readme/shot-add.png" width="49%" alt="Add account modal with a provider list">
+  <img src="./assets/readme/shot-settings.png" width="49%" alt="Settings: language, theme, close behavior and updates">
+</p>
 
-| Source | Description |
-|--------|-------------|
-| **GitHub Copilot** | Premium, chat and completion quotas (requires a GitHub token with access to Copilot's usage endpoint) |
-| **Z.ai Coding Plan** | GLM Coding Plan rolling and weekly usage |
-| **Kimi Coding Plan** | Kimi Coding Plan subscription usage |
-| **MiniMax Token Plan** | Rolling and weekly remaining quota |
-| **Devin / Windsurf** | Daily and weekly quotas plus overage balance |
-| **Grok CLI** | Grok CLI subscription period quota |
-| **OpenCode** | Official Go plan rolling (5-hour) / weekly / monthly usage |
-| **OpenDesign** | Design / Coding Plan 5-hour and weekly windows plus wallet balance (needs a Control Key, workspace ID optional; inference API keys cannot read quota) |
-| **Command Goat** | Command Code (CommandGoat) account, plan and window usage |
-| **DeepSeek API** | DeepSeek open platform balance |
-| **Kimi API** | Kimi open platform balance |
-| **OpenRouter** | Consumption and per-key limits for the current API key |
-| **OpenAI API** | Organization Admin Key query for the last 30 days of API costs |
+<p align="center"><sub>Left: adding an account · Right: settings</sub></p>
 
-> Provider dashboards and internal endpoints offer no stability guarantee; site redesigns or login policy changes may break a query. The integration approach and response mappings are documented in [`docs/quota-research.md`](docs/quota-research.md).
+## Supported services
 
-## 🖼️ Screenshots
+17 sources; subscriptions that need a web login open a dedicated browser window, everything else uses an API key.
 
-<div align="center">
-  <img src="./demo/image/account.png" alt="Quota home" width="800"/>
-  <p>Quota home</p>
-</div>
+| Service | Access | What it shows |
+|---------|--------|---------------|
+| Claude | Browser login | 5-hour and weekly quota windows, reset times |
+| ChatGPT / Codex | Browser login | Codex subscription usage window |
+| Cursor | Browser login | Usage for the current billing cycle |
+| Xiaomi MiMo Token Plan | Browser login | Plan credits, validity and token stats |
+| GitHub Copilot | API key | Premium, chat and completion quotas (needs a GitHub token that can reach Copilot's usage endpoint) |
+| Z.ai Coding Plan | API key | GLM Coding Plan rolling and weekly usage |
+| Kimi Coding Plan | API key | Subscription usage |
+| MiniMax Token Plan | API key | Rolling and weekly remaining quota |
+| Devin / Windsurf | API key | Daily and weekly quotas plus overage balance |
+| Grok CLI | API key | Subscription period quota |
+| OpenCode | API key | Go plan 5-hour / weekly / monthly usage |
+| OpenDesign | Control key | Design / Coding Plan windows and wallet balance (workspace ID optional; inference API keys cannot read quota) |
+| Command Goat | API key | Account, plan and window usage |
+| DeepSeek API | API key | Open platform balance |
+| Kimi API | API key | Open platform balance |
+| OpenRouter | API key | Consumption and limits for the current key |
+| OpenAI API | Admin key | Organization API cost over the last 30 days |
 
-<table width="100%">
-  <thead>
-    <tr>
-      <th width="50%">Add subscription</th>
-      <th width="50%">Subscription card</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td><img src="./demo/image/account-add.png" alt="Add subscription" style="width:100%; border-radius: 8px;"/></td>
-      <td><img src="./demo/image/account-card.png" alt="Subscription card" style="width:100%; border-radius: 8px;"/></td>
-    </tr>
-  </tbody>
-  <thead>
-    <tr>
-      <th>Quota home (dark)</th>
-      <th>Settings</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td><img src="./demo/image/account-dark.png" alt="Quota home (dark)" style="width:100%; border-radius: 8px;"/></td>
-      <td><img src="./demo/image/setting.png" alt="Settings" style="width:100%; border-radius: 8px;"/></td>
-    </tr>
-  </tbody>
-</table>
+All of these are on-site or internal usage endpoints without a stability guarantee: a redesign or a login policy change can break a query. The integration approach and response mappings live in [`docs/quota-research.md`](docs/quota-research.md); usually only the matching provider needs updating.
 
-## 🚀 Getting Started
+## Getting started
 
-### 📦 Install
+Download the macOS, Windows or Linux installer from [open.tecmz.com/quotapanel](https://open.tecmz.com/quotapanel) and open it.
 
-Download the installer for your platform from [open.tecmz.com/quotapanel](https://open.tecmz.com/quotapanel) and run it.
+Use 「添加」 (Add) in the top right and pick a service. Browser-login subscriptions (Claude, ChatGPT / Codex, Cursor, MiMo) open a dedicated window: sign in once, the session stays on this machine and is removed with the account. For API keys, paste the key and add a workspace or organization where the provider needs one; sensitive values are masked by default and can be copied.
 
-Supported platforms: **macOS / Windows / Linux**.
+Accounts then refresh every 5 minutes on their own, or on demand with 刷新 (Refresh) for one account or all of them. Day to day:
 
-### 🛠️ Local Development
+- Drag the handle in the card's top-left corner to reorder; the order is saved on drop and applies to the menu bar mini panel too
+- Click a card for every quota window, balance and usage stat
+- 「更多 → 分享」 (More → Share) exports a long image of one card or all of them
+- It lives in the macOS menu bar / Windows and Linux tray; on close you can be asked, quit, or hide to background
 
-#### Requirements
+### Local development
 
-- [Go](https://go.dev/dl/) 1.24+
-- [Wails v2](https://wails.io/docs/gettingstarted/installation)
-- [Node.js](https://nodejs.org/) 20 + [pnpm](https://pnpm.io/)
+You need Go 1.25+, [Wails v2](https://wails.io/docs/gettingstarted/installation), Node.js 20 and pnpm:
 
 ```bash
-# Install the Wails CLI
+# Install the Wails CLI and pnpm
 go install github.com/wailsapp/wails/v2/cmd/wails@latest
-
-# Install pnpm
 npm install -g pnpm
-```
 
-> Building on Linux also requires the Wails system dependencies (e.g. `libgtk-3-dev`, `libwebkit2gtk-4.0-dev`); see the Wails documentation.
-
-#### Commands
-
-```bash
-# Install Go and frontend dependencies
+# Install dependencies, then run in development mode (frontend hot reload)
 make install
-
-# Start development mode (frontend hot reload)
 make dev
 
 # Build the production app (output in build/bin/)
@@ -151,62 +109,43 @@ make build
 make build-install
 ```
 
-After changing a Go method exposed to the frontend, run `wails generate module` to regenerate the JS bindings.
+Building on Linux also needs the Wails system dependencies (`libgtk-3-dev`, `libwebkit2gtk-4.0-dev` and friends); see the Wails docs. After changing a Go method exposed to the frontend, run `wails generate module` to regenerate the JS bindings.
 
-## 📁 Project Structure
+## Data directory
+
+The first launch creates `~/.quotapanel/` for the config file, a SQLite database and each account's browser session. Set `QUOTAPANEL_DATA_ROOT` to keep it elsewhere; the settings page shows the path in use.
+
+## Project structure
 
 ```
 quotapanel/
 ├── main.go              # Wails app config and entry point
 ├── app*.go              # Methods exposed to the frontend
 ├── backend/
-│   ├── base/            # Base library (database, config, logging, window, platform specifics)
-│   └── quota/           # Quota provider adapters and query service
-├── frontend/
-│   └── packages/
-│       ├── ui/          # Main UI (Vue3 + AntDesignVue + TailwindCSS)
-│       └── quota/       # Quota business module
-├── demo/image/          # UI screenshots
-├── docs/                # Docs (quota source research, etc.)
+│   ├── base/            # Database, config, logging, window and platform specifics
+│   └── quota/           # Quota providers and the query service
+├── frontend/packages/
+│   ├── ui/              # Main UI (Vue3 + Ant Design Vue + TailwindCSS)
+│   └── quota/           # Quota business module
+├── docs/                # Quota source research, auto-update notes
 └── Makefile             # Dev, build and release commands
 ```
 
-## 🗂️ Data Directory
+## Contributing
 
-On first launch a data directory is created in your home folder (default `~/.quotapanel/`), holding the config file, SQLite database and per-account browser sessions. Set the `QUOTAPANEL_DATA_ROOT` environment variable to use another location.
+- Found a bug or have an idea? Open an [issue](https://github.com/open-tecmz/quotapanel/issues)
+- Adding a quota source: implement the `Provider` interface in `backend/quota/provider_*.go` and call `Register`; see [`docs/quota-research.md`](docs/quota-research.md) for the access patterns
+- Docs, translations and UI improvements are welcome as PRs; a star helps too
 
-## 🤝 Community
+Chat groups (mention "QuotaPanel" when adding us):
 
-> Please mention "QuotaPanel" when adding us.
+<p align="center">
+  <img src="https://open.tecmz.com/code_dynamic/wx" width="30%" alt="WeChat group QR code">
+  <img src="https://open.tecmz.com/code_dynamic/qq" width="30%" alt="QQ group QR code">
+</p>
 
-<table width="100%">
-  <thead>
-    <tr>
-      <th width="50%">💬 WeChat Group</th>
-      <th>🗣️ QQ Group</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td><img src="https://open.tecmz.com/code_dynamic/wx" alt="WeChat group" style="width:100%; border-radius: 8px;"/></td>
-      <td><img src="https://open.tecmz.com/code_dynamic/qq" alt="QQ group" style="width:100%; border-radius: 8px;"/></td>
-    </tr>
-  </tbody>
-</table>
+<p align="center"><sub>Left: WeChat · Right: QQ</sub></p>
 
-### 🌟 Support Us
+## License
 
-- ⭐ Star us on [GitHub](https://github.com/open-tecmz/quotapanel) / [Gitee](https://gitee.com/open-tecmz/quotapanel)
-- 🐛 Found a bug or have a suggestion? Open an Issue
-- 🔌 Add a quota source: implement the `Provider` interface in `backend/quota/provider_*.go` and call `Register`
-- 📖 Improve the docs: PRs are welcome
-
-## 📄 License
-
-Released under the [Apache-2.0](LICENSE) license — **free to use, modify and use commercially**.
-
----
-
-<div align="center">
-  <p>⭐ If this project helps you, please give us a Star!</p>
-</div>
+[Apache-2.0](LICENSE). Free to use, modify and ship commercially.

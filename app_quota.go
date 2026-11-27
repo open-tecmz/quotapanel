@@ -38,6 +38,10 @@ func (a *App) quotaCall(name string, decode func(interface{}) error) (interface{
 	case "quota.getAccounts":
 		return a.quotaSvc.ListAccounts()
 
+	case "quota.getSnapshots":
+		// 返回内存中已缓存的额度结果，只读、不触发供应商查询。
+		return a.quotaSnapshotList(), nil
+
 	case "quota.addAccount":
 		var p struct {
 			Provider string `json:"provider"`

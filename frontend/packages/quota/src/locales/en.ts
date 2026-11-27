@@ -12,6 +12,7 @@ export const en = {
       empty: 'No subscriptions',
       emptyDesc: 'Track Claude, ChatGPT / Codex, Cursor, Copilot, Z.ai, Kimi and more.',
       loading: 'Loading...',
+      loadingAccounts: 'Loading subscriptions…',
       queryHint: 'Refresh to check quota',
       resetAt: 'Resets',
       updatedAt: 'Quota updated {time}',

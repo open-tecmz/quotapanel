@@ -36,3 +36,6 @@ Thumbs.db
 /.wrpub
 /.awesomex
 /AGENTS.md
+
+# 开发证据包（mk-dev-plan）
+/.mk-evidence/

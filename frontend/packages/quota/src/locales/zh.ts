@@ -12,6 +12,7 @@ export const zh = {
       empty: '暂无订阅',
       emptyDesc: '支持 Claude、ChatGPT / Codex、Cursor、Copilot、Z.ai、Kimi 等订阅额度查询',
       loading: '查询中...',
+      loadingAccounts: '正在加载订阅账号…',
       queryHint: '点击刷新查询额度',
       resetAt: '重置时间',
       updatedAt: '额度更新于 {time}',

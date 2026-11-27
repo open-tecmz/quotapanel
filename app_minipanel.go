@@ -1,6 +1,8 @@
 package main
 
 import (
+	"sort"
+
 	"quotapanel/backend/base/platform"
 	"quotapanel/backend/quota"
 
@@ -110,5 +112,19 @@ func (a *App) quotaSnapshots() map[uint]*quota.Snapshot {
 	for id, s := range a.quotaSnaps {
 		out[id] = s
 	}
+	return out
+}
+
+// quotaSnapshotList 返回快照缓存的切片形式（按账号 ID 升序，保证顺序稳定）。
+// 前端切回额度页时用它直接回显上次结果，避免重复向供应商查询。
+func (a *App) quotaSnapshotList() []*quota.Snapshot {
+	snaps := a.quotaSnapshots()
+	out := make([]*quota.Snapshot, 0, len(snaps))
+	for _, s := range snaps {
+		if s != nil {
+			out = append(out, s)
+		}
+	}
+	sort.Slice(out, func(i, j int) bool { return out[i].AccountID < out[j].AccountID })
 	return out
 }

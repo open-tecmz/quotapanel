@@ -438,6 +438,7 @@ export interface CallMap {
   // ── quota：AI 订阅额度 ────────────────────────────────────
   'quota.getProviders': { args: void; ret: QuotaProviderInfo[] }
   'quota.getAccounts': { args: void; ret: QuotaAccount[] }
+  'quota.getSnapshots': { args: void; ret: QuotaSnapshot[] }
   'quota.addAccount': {
     args: { provider: string; name: string; key: string; note: string }
     ret: QuotaAccount

@@ -1,147 +1,105 @@
-# 🎯 QuotaPanel - AI 订阅额度中心
+# QuotaPanel
 
-<div align="center">
-  <img src="./demo/image/account.png" alt="QuotaPanel 主界面" width="800"/>
-</div>
+<p align="center">
+  <img src="./assets/readme/hero-zh.svg" width="100%" alt="QuotaPanel：17 家 AI 订阅与 API 的剩余额度，收进一张桌面面板">
+</p>
 
-> [🇨🇳 中文](README.md) | [🇺🇸 English](README.en-US.md)
+<p align="center">
+  <a href="README.en-US.md">English</a> ·
+  <a href="https://open.tecmz.com/quotapanel">下载</a> ·
+  <a href="https://github.com/open-tecmz/quotapanel">GitHub</a> ·
+  <a href="https://gitee.com/open-tecmz/quotapanel">Gitee</a>
+</p>
 
-<div align="center">
-  <img src="https://img.shields.io/badge/Framework-Go%20%2B%20Wails%20%2B%20Vue3-blue" alt="Framework"/>
-  <a href="https://open.tecmz.com/quotapanel"><img src="https://img.shields.io/badge/Website-open.tecmz.com%2Fquotapanel-blue" alt="Website"/></a>
-  <a href="https://github.com/open-tecmz/quotapanel"><img src="https://img.shields.io/github/stars/open-tecmz/quotapanel.svg" alt="GitHub Stars"/></a>
-  <a href="https://gitee.com/open-tecmz/quotapanel"><img src="https://gitee.com/open-tecmz/quotapanel/badge/star.svg" alt="Gitee Stars"/></a>
-  <img src="https://img.shields.io/badge/License-Apache%202.0-green" alt="License"/>
-</div>
+<p align="center">
+  <img src="https://img.shields.io/badge/Go%20%2B%20Wails%20%2B%20Vue3-desktop-blue" alt="Go + Wails + Vue3"/>
+  <img src="https://img.shields.io/badge/License-Apache%202.0-green" alt="Apache-2.0"/>
+  <a href="https://github.com/open-tecmz/quotapanel"><img src="https://img.shields.io/github/stars/open-tecmz/quotapanel.svg" alt="GitHub stars"/></a>
+  <a href="https://gitee.com/open-tecmz/quotapanel"><img src="https://gitee.com/open-tecmz/quotapanel/badge/star.svg" alt="Gitee stars"/></a>
+</p>
 
-## ✨ 项目简介
+同时订几家 AI 服务之后，额度就散在各家控制台里：Claude 的 5 小时窗口、Codex 的每周额度、Cursor 的账单周期、DeepSeek 和 OpenRouter 的余额，各查各的。QuotaPanel 把这些查询收进一个桌面应用，一个账号一张卡片，写清楚用了多少、还剩多少、什么时候重置。
 
-**QuotaPanel** 是一款开源的桌面端 AI 额度面板，把散落在各家控制台里的订阅与 API 余额集中到一张界面上：Claude、ChatGPT / Codex、Cursor、GitHub Copilot、Z.ai、Kimi、MiniMax、OpenRouter……一次刷新就能看清每个账号的额度窗口、剩余用量和重置时间。
+账号信息、API Key 和浏览器登录态都只保存在本机，查询由客户端直接发往各家接口，不经过任何中转。
 
-> 🎯 **目标**：订阅再多也不慌，一张面板看完所有 AI 额度。
+## 界面
 
-- 🔐 **本地优先**：账号密钥与浏览器会话全部保存在本机，不上传云端
-- 🔄 **自动刷新**：每 5 分钟轮询一次，额度变化实时可见，也可随时手动刷新
-- 🌐 **浏览器登录**：需要网页登录的订阅走独立浏览器窗口，登录态持久保存
-- 📊 **额度可视化**：进度条 + 余额明细 + 账期/重置时间，状态一眼可见
-- 🎨 **深浅主题**：浅色 / 深色一键切换
-- 🖥️ **跨平台**：支持 **macOS / Windows / Linux**
+<p align="center">
+  <img src="./assets/readme/shot-home.png" width="100%" alt="QuotaPanel 主界面：每个账号一张卡片，显示额度进度条、余额与重置时间">
+</p>
 
-## 📋 功能特性
+<p align="center"><sub>主界面：每张卡片对应一个账号，进度条颜色随状态变化</sub></p>
 
-| 功能 | 说明 |
-|------|------|
-| **多源额度聚合** | 17 种 AI 订阅与 API 额度来源，卡片式统一展示 |
-| **额度进度可视化** | 额度窗口、余额明细、用量统计、重置与账期时间一屏呈现 |
-| **详情弹窗** | 点击卡片查看全部额度窗口、余额与统计明细 |
-| **状态提示** | 正常 / 即将用尽 / 超限 三档状态色，超出阈值主动提示 |
-| **密钥管理** | 敏感值默认脱敏展示，支持一键复制 |
-| **卡片截图** | 将单张订阅卡片保存为 PNG 分享 |
-| **浏览器登录** | 独立 Chrome / Edge 窗口登录，Cookie 持久化，删除账号时一并清理 |
-| **定时刷新** | 每 5 分钟自动查询，支持手动刷新单个或全部账号 |
-| **多语言** | 简体中文 / English 切换 |
-| **开机自启** | 可选随系统启动 |
-| **托盘常驻** | macOS 菜单栏 / Windows、Linux 系统托盘，快捷显示、重启、退出 |
-| **关闭行为** | 关闭窗口时可选择「每次询问 / 直接退出 / 隐藏到后台」 |
+<p align="center">
+  <img src="./assets/readme/shot-card.png" width="100%" alt="单张额度卡片：5 小时、每周、月度三个额度窗口及重置时间">
+</p>
 
-## 🔌 支持的额度来源
+<p align="center"><sub>卡片本身：额度窗口、已用 / 总额、下次重置时间</sub></p>
 
-### 浏览器登录
+<p align="center">
+  <img src="./assets/readme/shot-detail.png" width="49%" alt="账号详情弹窗，列出全部额度窗口、余额与统计">
+  <img src="./assets/readme/shot-home-dark.png" width="49%" alt="深色主题下的主界面">
+</p>
 
-| 来源 | 说明 |
-|------|------|
-| **Claude 订阅** | 在独立登录窗口登录 Claude 后读取 5 小时及每周额度 |
-| **ChatGPT / Codex** | 登录 ChatGPT 后读取 Codex 订阅使用窗口 |
-| **Cursor** | 登录 Cursor 后读取当前周期用量 |
-| **Xiaomi MiMo Token Plan** | 登录小米 MiMo 平台后读取 Token Plan 套餐积分与账户余额 |
+<p align="center"><sub>左：详情弹窗 · 右：深色主题</sub></p>
 
-### API Key
+<p align="center">
+  <img src="./assets/readme/shot-add.png" width="49%" alt="添加账号弹窗，按服务选择接入方式">
+  <img src="./assets/readme/shot-settings.png" width="49%" alt="设置页：语言、主题、关闭行为与更新">
+</p>
 
-| 来源 | 说明 |
-|------|------|
-| **GitHub Copilot** | Premium、聊天与补全额度（需可访问 Copilot 内部用量接口的 GitHub 登录令牌） |
-| **Z.ai Coding Plan** | GLM Coding Plan 滚动及每周用量 |
-| **Kimi Coding Plan** | Kimi Coding Plan 订阅用量 |
-| **MiniMax Token Plan** | 滚动及每周剩余额度 |
-| **Devin / Windsurf** | 每日、每周额度及超额余额 |
-| **Grok CLI** | Grok CLI 订阅周期额度 |
-| **OpenCode** | 官方 Go 套餐的滚动（5 小时）/ 每周 / 月度用量 |
-| **OpenDesign** | Design / Coding Plan 的 5 小时、每周窗口与钱包余额（需 Control Key，工作区 ID 可省略；推理 API Key 无法查询额度） |
-| **Command Goat** | Command Code（CommandGoat）账号、套餐与窗口用量 |
-| **DeepSeek API** | DeepSeek 开放平台余额 |
-| **Kimi API** | Kimi 国内开放平台余额 |
-| **OpenRouter** | 当前 Key 的消费和单 Key 限额 |
-| **OpenAI API** | 组织 Admin Key 查询近 30 天 API 费用 |
+<p align="center"><sub>左：添加账号 · 右：设置</sub></p>
 
-> 站内及第三方内部接口没有稳定性承诺，网站改版或登录策略变化可能使查询失效。供应商的接入方式与响应映射详见 [`docs/quota-research.md`](docs/quota-research.md)。
+## 支持的服务
 
-## 🖼️ 界面预览
+17 个来源，接入方式分两类：需要网页登录的走独立浏览器窗口，其余用 API Key。
 
-<div align="center">
-  <img src="./demo/image/account.png" alt="额度主页" width="800"/>
-  <p>额度主页</p>
-</div>
+| 服务 | 接入 | 显示内容 |
+|------|------|----------|
+| Claude 订阅 | 网页登录 | 5 小时与每周额度窗口、重置时间 |
+| ChatGPT / Codex | 网页登录 | Codex 订阅的使用窗口 |
+| Cursor | 网页登录 | 当前账单周期的用量 |
+| 小米 MiMo Token Plan | 网页登录 | 套餐积分、有效期与 Token 统计 |
+| GitHub Copilot | API Key | Premium、对话与补全额度（需可访问 Copilot 用量接口的 GitHub 令牌） |
+| Z.ai Coding Plan | API Key | GLM Coding Plan 滚动与每周用量 |
+| Kimi Coding Plan | API Key | 订阅用量 |
+| MiniMax Token Plan | API Key | 滚动与每周剩余额度 |
+| Devin / Windsurf | API Key | 每日、每周额度与超额余额 |
+| Grok CLI | API Key | 订阅周期额度 |
+| OpenCode | API Key | Go 套餐的 5 小时 / 每周 / 月度用量 |
+| OpenDesign | Control Key | Design / Coding Plan 窗口与钱包余额（工作区 ID 可省略；推理 API Key 查不到额度） |
+| Command Goat | API Key | 账号、套餐与窗口用量 |
+| DeepSeek API | API Key | 开放平台余额 |
+| Kimi API | API Key | 开放平台余额 |
+| OpenRouter | API Key | 当前 Key 的消费与限额 |
+| OpenAI API | Admin Key | 组织近 30 天的 API 费用 |
 
-<table width="100%">
-  <thead>
-    <tr>
-      <th width="50%">新增账号弹窗</th>
-      <th width="50%">账号卡片</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td><img src="./demo/image/account-add.png" alt="新增账号弹窗" style="width:100%; border-radius: 8px;"/></td>
-      <td><img src="./demo/image/account-card.png" alt="账号卡片" style="width:100%; border-radius: 8px;"/></td>
-    </tr>
-  </tbody>
-  <thead>
-    <tr>
-      <th>额度主页（深色）</th>
-      <th>设置页</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td><img src="./demo/image/account-dark.png" alt="额度主页（深色）" style="width:100%; border-radius: 8px;"/></td>
-      <td><img src="./demo/image/setting.png" alt="设置页" style="width:100%; border-radius: 8px;"/></td>
-    </tr>
-  </tbody>
-</table>
+这些接口都是各家站内或内部用量接口，没有稳定性承诺，平台改版或登录策略调整时可能失效。接入方式与响应映射记录在 [`docs/quota-research.md`](docs/quota-research.md)，改版时只需更新对应的 provider。
 
-## 🚀 快速开始
+## 开始使用
 
-### 📦 下载安装
+从 [open.tecmz.com/quotapanel](https://open.tecmz.com/quotapanel) 下载 macOS、Windows 或 Linux 安装包，装好直接打开。
 
-访问官网 [open.tecmz.com/quotapanel](https://open.tecmz.com/quotapanel) 下载对应系统的安装包，安装后即可使用。
+点右上角「添加」选择服务。需要网页登录的（Claude、ChatGPT / Codex、Cursor、MiMo）会弹出独立浏览器窗口，登录一次即可，登录态存在本机，删账号时一并清掉。用 Key 的把 Key 粘进去，需要工作区或组织的再补上；敏感值默认脱敏，可一键复制。
 
-支持 **macOS / Windows / Linux** 三个平台。
+添加后的账号每 5 分钟自动查询一次，也可以点「刷新」手动查单个或全部账号。日常操作：
 
-### 🛠️ 本地开发
+- 按住卡片左上角的手柄拖动可以排序，松手即保存，主界面和菜单栏迷你面板同步生效
+- 点卡片打开详情，看全部额度窗口、余额与统计
+- 「更多 → 分享」生成单卡或全部卡片的长图，方便贴到群里
+- macOS 菜单栏 / Windows、Linux 托盘常驻；关窗时可以选择每次询问、直接退出或隐藏到后台
 
-#### 环境要求
+### 本地开发
 
-- [Go](https://go.dev/dl/) 1.24+
-- [Wails v2](https://wails.io/docs/gettingstarted/installation)
-- [Node.js](https://nodejs.org/) 20 + [pnpm](https://pnpm.io/)
+需要 Go 1.25+、[Wails v2](https://wails.io/docs/gettingstarted/installation)、Node.js 20 与 pnpm：
 
 ```bash
-# 安装 Wails CLI
+# 安装 Wails CLI 与 pnpm
 go install github.com/wailsapp/wails/v2/cmd/wails@latest
-
-# 安装 pnpm
 npm install -g pnpm
-```
 
-> Linux 构建还需安装 Wails 的系统依赖（`libgtk-3-dev`、`libwebkit2gtk-4.0-dev` 等），详见 Wails 官方文档。
-
-#### 开发命令
-
-```bash
-# 安装 Go 与前端依赖
+# 安装依赖、启动开发模式（前端热重载）
 make install
-
-# 启动开发模式（前端热重载）
 make dev
 
 # 构建生产版本（产物在 build/bin/）
@@ -151,62 +109,43 @@ make build
 make build-install
 ```
 
-修改 Go 暴露给前端的方法后，执行 `wails generate module` 重新生成 JS 绑定。
+Linux 构建还要装 Wails 的系统依赖（`libgtk-3-dev`、`libwebkit2gtk-4.0-dev` 等），见 Wails 文档。改了 Go 暴露给前端的方法后，执行 `wails generate module` 重新生成 JS 绑定。
 
-## 📁 项目结构
+## 数据目录
+
+首次启动会创建 `~/.quotapanel/`，放着配置文件、SQLite 数据库和各账号的浏览器会话。要换位置就设置环境变量 `QUOTAPANEL_DATA_ROOT`，设置页会显示当前实际路径。
+
+## 项目结构
 
 ```
 quotapanel/
 ├── main.go              # Wails 应用配置与入口
-├── app*.go              # App 暴露给前端的方法
+├── app*.go              # 暴露给前端的方法
 ├── backend/
-│   ├── base/            # 基础库（数据库、配置、日志、窗口、平台差异等）
-│   └── quota/           # 各额度供应商适配器与查询服务
-├── frontend/
-│   └── packages/
-│       ├── ui/          # 主界面（Vue3 + AntDesignVue + TailwindCSS）
-│       └── quota/       # 额度业务模块
-├── demo/image/          # 界面截图
-├── docs/                # 文档（额度来源调研等）
+│   ├── base/            # 基础库：数据库、配置、日志、窗口、平台差异
+│   └── quota/           # 额度 provider 与查询服务
+├── frontend/packages/
+│   ├── ui/              # 主界面（Vue3 + Ant Design Vue + TailwindCSS）
+│   └── quota/           # 额度业务模块
+├── docs/                # 额度来源调研、自动更新说明
 └── Makefile             # 开发、构建与发布命令
 ```
 
-## 🗂️ 数据目录
+## 参与贡献
 
-首次启动会在用户目录创建数据目录（默认 `~/.quotapanel/`），保存配置文件、SQLite 数据库与各账号的浏览器会话。可通过环境变量 `QUOTAPANEL_DATA_ROOT` 指定其他位置。
+- 发现 Bug 或有建议，提 [Issue](https://github.com/open-tecmz/quotapanel/issues)
+- 新增额度来源：在 `backend/quota/provider_*.go` 里实现 `Provider` 接口并 `Register`，接入方式可参考 [`docs/quota-research.md`](docs/quota-research.md)
+- 文档、翻译、界面改进都欢迎 PR；觉得有用可以点个 Star
 
-## 🤝 社区交流
+交流群（添加好友请备注 "QuotaPanel"）：
 
-> 添加好友请备注 "QuotaPanel"
+<p align="center">
+  <img src="https://open.tecmz.com/code_dynamic/wx" width="30%" alt="微信交流群二维码">
+  <img src="https://open.tecmz.com/code_dynamic/qq" width="30%" alt="QQ 交流群二维码">
+</p>
 
-<table width="100%">
-  <thead>
-    <tr>
-      <th width="50%">💬 微信交流群</th>
-      <th>🗣️ QQ 交流群</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td><img src="https://open.tecmz.com/code_dynamic/wx" alt="微信群" style="width:100%; border-radius: 8px;"/></td>
-      <td><img src="https://open.tecmz.com/code_dynamic/qq" alt="QQ群" style="width:100%; border-radius: 8px;"/></td>
-    </tr>
-  </tbody>
-</table>
+<p align="center"><sub>左：微信交流群 · 右：QQ 交流群</sub></p>
 
-### 🌟 支持我们
+## 许可证
 
-- ⭐ 在 [GitHub](https://github.com/open-tecmz/quotapanel) / [Gitee](https://gitee.com/open-tecmz/quotapanel) 上点亮 Star
-- 🐛 发现 Bug 或提出建议 → 提交 Issue
-- 🔌 新增额度来源 → 参考 `backend/quota/provider_*.go` 实现 `Provider` 接口并 `Register`
-- 📖 改进文档 → 欢迎 PR
-
-## 📄 许可证
-
-本项目采用 [Apache-2.0](LICENSE) 许可证开源，**可自由使用、修改和商用**。
-
----
-
-<div align="center">
-  <p>⭐ 如果这个项目对你有帮助，请给我们一个 Star！</p>
-</div>
+[Apache-2.0](LICENSE)，可自由使用、修改和商用。

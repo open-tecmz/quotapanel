@@ -54,6 +54,12 @@
       </a-button>
     </div>
 
+    <!-- 首次加载中：先转圈，不误显示空状态 -->
+    <div v-else-if="accounts.length === 0" class="account-loading">
+      <a-spin size="large" />
+      <div class="account-loading-text">{{ t('quota.account.loadingAccounts') }}</div>
+    </div>
+
     <!-- 卡片列表（按住卡片左上角手柄可拖拽排序） -->
     <div v-else class="account-list" @dragover.prevent @drop.prevent="onCardDrop">
       <QuotaAccountCard
@@ -115,24 +121,22 @@ import { EventsOn, EventsOff } from '@quotapanel/ui/wailsjs/runtime/runtime'
 import PageHeader from '@quotapanel/ui/src/components/PageHeader.vue'
 import { testActionSet, testActionUnset } from '@quotapanel/ui/src/utils/test'
 import { useAppStore } from '@quotapanel/ui/src/stores/app'
-import type { QuotaAccount, QuotaProviderInfo, QuotaSnapshot } from '../api/main'
+import type { QuotaAccount, QuotaSnapshot } from '../api/main'
 import { main } from '../api/main'
 import QuotaAccountCard from './QuotaAccount/QuotaAccountCard.vue'
 import QuotaAccountDetailModal from './QuotaAccount/QuotaAccountDetailModal.vue'
 import QuotaAccountModal from './QuotaAccount/QuotaAccountModal.vue'
 import SharePreviewModal from './QuotaAccount/SharePreviewModal.vue'
+import { quotaCache } from '../cache/quota'
 import { renderCardScreenshot, renderShareImage } from '../utils/cardScreenshot'
 
 const { t } = useI18n()
 const appStore = useAppStore()
 const router = useRouter()
 
-const providers = ref<QuotaProviderInfo[]>([])
-const accounts = ref<QuotaAccount[]>([])
-const snapshots = ref<Record<number, QuotaSnapshot>>({})
+// 账号 / 额度直接读写会话缓存，切走再回来时不用重新拉取也能立即渲染。
+const { providers, accounts, snapshots, loadingAccounts, queryingAll, hasQueriedAll, queryAllCount } = quotaCache
 const queryingIds = ref<Set<number>>(new Set())
-const loadingAccounts = ref(false)
-const queryingAll = ref(false)
 
 const showModal = ref(false)
 const editingAccount = ref<QuotaAccount | null>(null)
@@ -152,7 +156,7 @@ const website = ref('')
 // persistedOrder：已持久化的顺序（用于跳过无变化的重排请求）。
 const draggingId = ref<number | null>(null)
 const dropTarget = ref<{ id: number; after: boolean } | null>(null)
-const persistedOrder = ref('')
+const persistedOrder = ref(orderKey(accounts.value))
 let dragEndedAt = 0
 
 function orderKey(list: QuotaAccount[]): string {
@@ -230,12 +234,14 @@ function dropSideOf(account: QuotaAccount): 'before' | 'after' | null {
 }
 
 async function loadAccounts() {
-  loadingAccounts.value = true
+  // 已有缓存时静默刷新，避免把渲染好的卡片又换成加载态。
+  const silent = accounts.value.length > 0
+  if (!silent) loadingAccounts.value = true
   try {
     accounts.value = (await main.Call('quota.getAccounts')) || []
     persistedOrder.value = orderKey(accounts.value)
   } finally {
-    loadingAccounts.value = false
+    if (!silent) loadingAccounts.value = false
   }
 }
 
@@ -243,9 +249,23 @@ async function loadProviders() {
   providers.value = (await main.Call('quota.getProviders')) || []
 }
 
+// loadCachedSnapshots 读取后端已缓存的额度结果：切回页面时直接回显，不重新查询供应商。
+async function loadCachedSnapshots() {
+  try {
+    const list = (await main.Call('quota.getSnapshots')) || []
+    if (list.length === 0) return
+    const next: Record<number, QuotaSnapshot> = { ...snapshots.value }
+    for (const snap of list) next[snap.accountId] = snap
+    snapshots.value = next
+  } catch {
+    // 缓存读取失败不影响页面，仍可通过「刷新」重新查询。
+  }
+}
+
 async function doQueryAll() {
   if (accounts.value.length === 0 || queryingAll.value) return
   queryingAll.value = true
+  queryAllCount.value += 1
   try {
     const list = (await main.Call('quota.queryAll')) || []
     const next: Record<number, QuotaSnapshot> = { ...snapshots.value }
@@ -257,6 +277,7 @@ async function doQueryAll() {
     message.error(e instanceof Error ? e.message : String(e))
   } finally {
     queryingAll.value = false
+    hasQueriedAll.value = true
   }
 }
 
@@ -449,10 +470,13 @@ async function onSaved(account: QuotaAccount) {
 }
 
 async function init() {
-  await loadWebsite()
-  await loadProviders()
-  await loadAccounts()
-  await doQueryAll()
+  await Promise.all([loadWebsite(), loadProviders(), loadAccounts()])
+  await loadCachedSnapshots()
+  // 本会话与后端都还没有任何额度结果时才自动全量查询（通常是首次进入）；
+  // 之后由后端 5 分钟轮询推送与手动刷新更新，切页面不再重复查询。
+  if (!hasQueriedAll.value && accounts.value.length > 0 && Object.keys(snapshots.value).length === 0) {
+    await doQueryAll()
+  }
 }
 
 onMounted(() => {
@@ -461,12 +485,21 @@ onMounted(() => {
     const next = { ...snapshots.value }
     for (const snap of list || []) next[snap.accountId] = snap
     snapshots.value = next
+    hasQueriedAll.value = true
   })
   EventsOn('mini:openAccount', (id: number) => {
     doOpenAccountFromMini(id)
   })
   testActionSet('QuotaAccount.isLoading', () => loadingAccounts.value)
   testActionSet('QuotaAccount.isQueryingAll', () => queryingAll.value)
+  testActionSet('QuotaAccount.getCacheStats', () => ({
+    loadingAccounts: loadingAccounts.value,
+    queryingAll: queryingAll.value,
+    hasQueriedAll: hasQueriedAll.value,
+    queryAllCount: queryAllCount.value,
+    accountCount: accounts.value.length,
+    snapshotCount: Object.keys(snapshots.value).length,
+  }))
   testActionSet('QuotaAccount.getProviders', () => providers.value)
   testActionSet('QuotaAccount.getAccounts', () => accounts.value)
   testActionSet('QuotaAccount.getSnapshots', () => snapshots.value)
@@ -691,6 +724,7 @@ onUnmounted(() => {
   testActionUnset([
     'QuotaAccount.isLoading',
     'QuotaAccount.isQueryingAll',
+    'QuotaAccount.getCacheStats',
     'QuotaAccount.getProviders',
     'QuotaAccount.getAccounts',
     'QuotaAccount.getSnapshots',
@@ -777,6 +811,25 @@ onUnmounted(() => {
 
 .empty-icon {
   color: #d1d5db;
+}
+
+.account-loading {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  /* 贴近列表起始位置，加载结束后卡片就从这里开始，视线不用回跳。 */
+  padding-top: 10vh;
+}
+
+.account-loading-text {
+  font-size: 12px;
+  color: var(--token-neutral-500);
+}
+
+:global(.dark .account-loading-text) {
+  color: var(--token-neutral-400);
 }
 
 .empty-title {
